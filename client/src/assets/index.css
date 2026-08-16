@@ -14,3 +14,9 @@ body {
   min-height: 100vh;
   font-family: Arial, sans-serif;
 }
+
+.form-error {
+  margin: 4px 0 12px;
+  color: #d14343;
+  font-size: 14px;
+}
