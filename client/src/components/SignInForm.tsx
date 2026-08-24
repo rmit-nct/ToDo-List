@@ -3,10 +3,12 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { signInSchema } from '../schemas/authSchema'
 import { z } from 'zod'
 import FormError from './FormError'
+import { useNavigate } from 'react-router-dom'
 
 type SignInFormData = z.infer<typeof signInSchema>
 
 function SignInForm() {
+  const navigate = useNavigate()
   const {
     register,
     handleSubmit,
@@ -15,15 +17,16 @@ function SignInForm() {
     resolver: zodResolver(signInSchema),
   })
 
-  const onSubmit = (data: SignInFormData) => {
-    console.log(data)
+  const onSubmit = (_data: SignInFormData) => {
+    navigate('/workspace/web-dev/today')
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form className="auth-form" onSubmit={handleSubmit(onSubmit)}>
       <label>
         Email
         <input
+          placeholder="aria@example.com"
           type="email"
           {...register('email')}
         />
@@ -34,6 +37,7 @@ function SignInForm() {
       <label>
         Password
         <input
+          placeholder="••••••••"
           type="password"
           {...register('password')}
         />
@@ -41,8 +45,10 @@ function SignInForm() {
 
       <FormError message={errors.password?.message} />
 
-      <button type="submit">
-        Sign In
+      <div className="auth-form-meta"><button type="button">Forgot password?</button></div>
+
+      <button className="auth-submit" type="submit">
+        Sign In →
       </button>
     </form>
   )
