@@ -1,0 +1,233 @@
+/* Pull in the same fonts the Figma design uses */
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+/* Design tokens copied from the NEO Figma mockup's color palette.
+   Keeping them as CSS variables means if the team wants to re-theme
+   later (e.g. dark mode), it's a one-place change. */
+:root {
+  --bg: #E3EDF9;
+  --surface: #ffffff;
+  --surface2: #f4f7fb;
+  --text: #202946;
+  --text-muted: #4896AC;
+  --border: #c8d9e8;
+  --accent: #4896AC;
+  --accent2: #FBB61B;
+  --tag-todo: #E3EDF9;
+  --tag-todo-text: #4896AC;
+  --tag-inprog: #fff4cc;
+  --tag-inprog-text: #b37a00;
+  --tag-done: #d4f5e9;
+  --tag-done-text: #1a7a50;
+  --priority-high: #e74c3c;
+  --priority-medium: #FBB61B;
+  --priority-low: #4896AC;
+  --font-display: 'Barlow', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --navy: #202946;
+}
+
+body {
+  background: var(--bg);
+  margin: 0;
+  min-height: 100vh;
+}
+
+.homepage {
+  padding: 24px;
+  font-family: var(--font-body);
+  color: var(--text);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.homepage h1,
+.homepage h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+/* Search bar + dropdowns row */
+.controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.controls input,
+.controls select {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: var(--font-body);
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* Task list container */
+.task-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+/* Task card — matches the Figma TaskCard component's look */
+.task-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  transition: box-shadow 0.15s, background 0.15s;
+  flex-wrap: wrap;
+}
+
+.task-card:hover {
+  background: var(--surface2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.task-title {
+  font-weight: 600;
+  font-size: 13px;
+  flex: 1;
+  min-width: 160px;
+}
+
+/* Status badge — colors chosen to match the status text via the
+   status-todo / status-inprogress / status-done class we add in HomePage.tsx */
+.task-status {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+}
+
+.status-to-do {
+  background: var(--tag-todo);
+  color: var(--tag-todo-text);
+}
+
+.status-in-progress {
+  background: var(--tag-inprog);
+  color: var(--tag-inprog-text);
+}
+
+.status-done {
+  background: var(--tag-done);
+  color: var(--tag-done-text);
+}
+
+/* Priority badge */
+.task-priority {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+}
+
+.priority-high {
+  background: color-mix(in srgb, var(--priority-high) 15%, transparent);
+  color: var(--priority-high);
+}
+
+.priority-medium {
+  background: color-mix(in srgb, var(--priority-medium) 15%, transparent);
+  color: var(--priority-medium);
+}
+
+.priority-low {
+  background: color-mix(in srgb, var(--priority-low) 15%, transparent);
+  color: var(--priority-low);
+}
+
+.task-due,
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Loading / empty state message */
+.status-message {
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 16px 0;
+}
+
+/* Team members list */
+.member-list {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 16px;
+}
+
+.member-list li {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+/* Add member form */
+.member-form {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.member-form input {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: var(--font-body);
+}
+
+.member-form button {
+  padding: 8px 16px;
+  background: var(--navy);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.member-form button:hover {
+  background: #141b30;
+}
+
+/* Responsive: stack on small screens */
+@media (max-width: 500px) {
+  .controls {
+    flex-direction: column;
+  }
+  .task-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* Hides text visually but keeps it available to screen readers */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
