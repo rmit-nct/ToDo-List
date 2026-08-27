@@ -1,15 +1,24 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import JoinWorkspaceForm from '../components/JoinWorkspaceForm'
+import CreateWorkspaceForm from '../components/CreateWorkspaceForm'
 
 function LandingPage() {
   const { workspaceId } = useParams()
+  const [hasJoined, setHasJoined] = useState(false)
 
-  const [hasJoined, setHasJoined] = useState(() => {
-    if (!workspaceId) return false
+  useEffect(() => {
+    if (!workspaceId) {
+      setHasJoined(false)
+      return
+    }
 
-    return localStorage.getItem(`memberIdentity:${workspaceId}`) !== null
-  })
+    const identity = localStorage.getItem(
+      `memberIdentity:${workspaceId}`
+    )
+
+    setHasJoined(identity !== null)
+  }, [workspaceId])
 
   return (
     <main>
@@ -40,10 +49,7 @@ function LandingPage() {
             </>
           )
         ) : (
-          <>
-            <h2>Get started</h2>
-            <p>Create a workspace to begin.</p>
-          </>
+          <CreateWorkspaceForm />
         )}
       </section>
     </main>

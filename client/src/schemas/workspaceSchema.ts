@@ -8,3 +8,8 @@ export const joinWorkspaceSchema = z.object({
     .optional()
     .or(z.literal('')),
 })
+
+export const createWorkspaceSchema = z.object({
+  workspaceName: z.string().min(1, 'Workspace name is required'),
+  memberName: z.string().min(1, 'Your name is required'),
+})
