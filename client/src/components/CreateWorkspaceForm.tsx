@@ -28,7 +28,7 @@ function CreateWorkspaceForm() {
 
     localStorage.setItem(
       `memberIdentity:${workspaceId}`,
-      JSON.stringify(creatorIdentity)
+      JSON.stringify(creatorIdentity),
     )
 
     console.log('Created workspace:', {
@@ -41,38 +41,40 @@ function CreateWorkspaceForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <h2>Create Workspace</h2>
+    <form className="form-card stack" onSubmit={handleSubmit(onSubmit)}>
+      <header className="stack stack-sm">
+        <p className="eyebrow">Workspace setup</p>
+        <h2>Create Workspace</h2>
+        <p className="text-muted">Create a new workspace for your team.</p>
+      </header>
 
-      <p>Create a new workspace for your team.</p>
-
-      <label>
-        Workspace Name
+      <label className="field">
+        <span>Workspace Name</span>
         <input
           type="text"
           placeholder="e.g. Human Resource Team"
+          aria-invalid={errors.workspaceName ? 'true' : 'false'}
           {...register('workspaceName')}
         />
+        {errors.workspaceName && (
+          <span className="form-error">{errors.workspaceName.message}</span>
+        )}
       </label>
 
-      {errors.workspaceName && (
-        <p>{errors.workspaceName.message}</p>
-      )}
-
-      <label>
-        Your Name
+      <label className="field">
+        <span>Your Name</span>
         <input
           type="text"
           placeholder="Your name"
+          aria-invalid={errors.memberName ? 'true' : 'false'}
           {...register('memberName')}
         />
+        {errors.memberName && (
+          <span className="form-error">{errors.memberName.message}</span>
+        )}
       </label>
 
-      {errors.memberName && (
-        <p>{errors.memberName.message}</p>
-      )}
-
-      <button type="submit">
+      <button className="btn btn-primary" type="submit">
         Create Workspace
       </button>
     </form>

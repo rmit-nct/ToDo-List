@@ -10,10 +10,7 @@ type JoinWorkspaceFormProps = {
   onJoined: () => void
 }
 
-function JoinWorkspaceForm({
-  workspaceId,
-  onJoined,
-}: JoinWorkspaceFormProps) {
+function JoinWorkspaceForm({ workspaceId, onJoined }: JoinWorkspaceFormProps) {
   const {
     register,
     handleSubmit,
@@ -24,48 +21,51 @@ function JoinWorkspaceForm({
 
   const onSubmit = (data: JoinWorkspaceFormData) => {
     const identity = {
-      workspaceId: workspaceId,
+      workspaceId,
       name: data.name,
       email: data.email || '',
     }
 
     localStorage.setItem(
       `memberIdentity:${workspaceId}`,
-      JSON.stringify(identity)
+      JSON.stringify(identity),
     )
 
     console.log('Saved identity:', identity)
-
     onJoined()
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <p>Enter your details to join the workspace.</p>
+    <form className="form-card stack" onSubmit={handleSubmit(onSubmit)}>
+      <header className="stack stack-sm">
+        <p className="eyebrow">Workspace setup</p>
+        <h2>Join Workspace</h2>
+        <p className="text-muted">Workspace ID: {workspaceId}</p>
+      </header>
 
-      <label>
-        Name
+      <label className="field">
+        <span>Name</span>
         <input
           type="text"
           placeholder="Your name"
+          aria-invalid={errors.name ? 'true' : 'false'}
           {...register('name')}
         />
+        {errors.name && <span className="form-error">{errors.name.message}</span>}
       </label>
 
-      {errors.name && (<p>{errors.name.message}</p>)}
-
-      <label>
-        Email (optional)
+      <label className="field">
+        <span>Email (optional)</span>
         <input
           type="email"
           placeholder="you@neoculture.com"
+          aria-invalid={errors.email ? 'true' : 'false'}
           {...register('email')}
         />
+        {errors.email && <span className="form-error">{errors.email.message}</span>}
       </label>
 
-      {errors.email && (<p>{errors.email.message}</p>)}
-
-      <button type="submit">
+      <button className="btn btn-primary" type="submit">
         Join Workspace
       </button>
     </form>

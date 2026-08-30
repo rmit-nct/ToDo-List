@@ -1,0 +1,70 @@
+/* Landing and workspace setup page only. */
+
+.landing-page {
+  display: grid;
+  min-height: 100vh;
+  grid-template-columns: minmax(18rem, 1fr) minmax(20rem, 1fr);
+}
+
+.landing-copy,
+.workspace-panel {
+  display: grid;
+  align-content: center;
+  padding: clamp(var(--space-8), 6vw, 5rem);
+}
+
+.landing-copy {
+  position: relative;
+  gap: var(--space-5);
+  overflow: hidden;
+  background:
+    linear-gradient(rgb(31 43 80 / 94%), rgb(31 43 80 / 98%)),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 31px,
+      rgb(255 255 255 / 5%) 31px 32px
+    );
+  color: var(--color-text-inverse);
+}
+
+.landing-copy::after {
+  position: absolute;
+  right: -7rem;
+  bottom: -7rem;
+  width: 20rem;
+  height: 20rem;
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 50%;
+  content: "";
+}
+
+.landing-copy h1 span {
+  color: var(--color-accent);
+}
+
+.landing-copy .lead {
+  max-width: 38rem;
+  color: #c3cde0;
+  font-size: var(--font-size-lg);
+}
+
+.workspace-panel {
+  background: var(--color-bg);
+}
+
+@media (max-width: 56rem) {
+  .landing-page {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-copy {
+    min-height: 19rem;
+  }
+}
+
+@media (max-width: 40rem) {
+  .landing-copy,
+  .workspace-panel {
+    padding: var(--space-5);
+  }
+}
