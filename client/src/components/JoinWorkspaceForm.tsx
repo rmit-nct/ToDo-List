@@ -40,11 +40,13 @@ function JoinWorkspaceForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <p>Enter your details to join the workspace.</p>
-
-      <label>
+    <form
+      className="workspace-form"
+      onSubmit={handleSubmit(onSubmit)}
+    >
+      <label className="workspace-form-field">
         Name
+
         <input
           type="text"
           placeholder="Your name"
@@ -52,10 +54,15 @@ function JoinWorkspaceForm({
         />
       </label>
 
-      {errors.name && (<p>{errors.name.message}</p>)}
+      {errors.name && (
+        <p className="form-error">
+          {errors.name.message}
+        </p>
+      )}
 
-      <label>
+      <label className="workspace-form-field">
         Email (optional)
+
         <input
           type="email"
           placeholder="you@neoculture.com"
@@ -63,9 +70,16 @@ function JoinWorkspaceForm({
         />
       </label>
 
-      {errors.email && (<p>{errors.email.message}</p>)}
+      {errors.email && (
+        <p className="form-error">
+          {errors.email.message}
+        </p>
+      )}
 
-      <button type="submit">
+      <button
+        className="workspace-form-submit"
+        type="submit"
+      >
         Join Workspace
       </button>
     </form>

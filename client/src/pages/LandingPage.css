@@ -1,0 +1,678 @@
+/* =========================
+   LANDING PAGE
+   ========================= */
+
+.landing-page {
+  min-height: 100vh;
+
+  display: grid;
+  grid-template-columns:
+    minmax(540px, 1.15fr)
+    minmax(420px, 0.85fr);
+}
+
+
+/* =========================
+   LEFT - PROMOTION
+   ========================= */
+
+.landing-promo {
+  min-height: 100vh;
+
+  padding: 48px 64px;
+
+  display: flex;
+  flex-direction: column;
+
+  background: #202946;
+  color: #ffffff;
+}
+
+
+/* =========================
+   BRAND
+   ========================= */
+
+.landing-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.landing-brand-mark {
+  width: 42px;
+  height: 42px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 10px;
+
+  background: #8ce7ff;
+  color: #202946;
+
+  font-size: 21px;
+  font-weight: 800;
+
+  box-shadow:
+    0 6px 18px rgba(140, 231, 255, 0.12);
+}
+
+.landing-brand-text {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.landing-brand-text strong {
+  color: #ffffff;
+
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.landing-brand-text span {
+  color: #8ce7ff;
+
+  font-size: 14px;
+  font-weight: 600;
+}
+
+
+/* =========================
+   PROMO CONTENT
+   ========================= */
+
+.landing-promo-content {
+  width: 100%;
+  max-width: 700px;
+
+  margin: auto 0;
+}
+
+
+/* small label */
+
+.landing-kicker {
+  margin-bottom: 16px;
+
+  color: #8ce7ff;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  letter-spacing: 2.3px;
+  text-transform: uppercase;
+}
+
+
+/* main heading */
+
+.landing-promo-content h1 {
+  margin: 0;
+
+  color: #ffffff;
+
+  font-size: clamp(56px, 5vw, 78px);
+  line-height: 1;
+
+  font-weight: 800;
+  letter-spacing: -2.5px;
+}
+
+.landing-promo-content h1 span {
+  color: #fbb61b;
+}
+
+
+/* cyan accent */
+
+.landing-title-line {
+  width: 64px;
+  height: 4px;
+
+  margin-top: 26px;
+
+  border-radius: 999px;
+
+  background: #8ce7ff;
+
+  box-shadow:
+    0 0 12px rgba(140, 231, 255, 0.25);
+}
+
+
+/* description */
+
+.landing-description {
+  max-width: 540px;
+
+  margin: 24px 0 0;
+
+  color: #c7d2e6;
+
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+
+/* =========================
+   FEATURE CARDS
+   ========================= */
+
+.landing-features {
+  width: 100%;
+
+  margin-top: 40px;
+
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 14px;
+}
+
+.landing-feature-card {
+  position: relative;
+
+  min-width: 0;
+  height: 235px;
+
+  padding: 22px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+  overflow: hidden;
+
+  border:
+    1px solid rgba(72, 150, 172, 0.65);
+
+  border-radius: 14px;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(140, 231, 255, 0.06),
+      rgba(140, 231, 255, 0.015)
+    );
+
+  box-shadow:
+    inset 0 0 28px
+    rgba(140, 231, 255, 0.025);
+
+  transition:
+    transform 0.28s ease,
+    border-color 0.28s ease,
+    background 0.28s ease,
+    box-shadow 0.28s ease;
+}
+
+
+/* bottom glow */
+
+.landing-feature-card::after {
+  content: '';
+
+  position: absolute;
+
+  left: 25%;
+  right: 25%;
+  bottom: 0;
+
+  height: 2px;
+
+  background: #27d7f5;
+
+  box-shadow:
+    0 0 10px
+    rgba(39, 215, 245, 0.75);
+
+  opacity: 0.75;
+
+  transition:
+    left 0.28s ease,
+    right 0.28s ease,
+    opacity 0.28s ease;
+}
+
+
+/* =========================
+   FEATURE ICON
+   ========================= */
+
+.landing-feature-icon {
+  width: 54px;
+  height: 54px;
+
+  margin-bottom: 20px;
+
+  display: grid;
+  place-items: center;
+
+  flex-shrink: 0;
+
+  border:
+    1px solid rgba(39, 215, 245, 0.65);
+
+  border-radius: 12px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(39, 215, 245, 0.12),
+      rgba(39, 215, 245, 0.025)
+    );
+
+  color: #27d7f5;
+
+  transition:
+    transform 0.28s ease,
+    background 0.28s ease,
+    box-shadow 0.28s ease;
+}
+
+.landing-feature-icon svg {
+  width: 27px;
+  height: 27px;
+
+  stroke-width: 2;
+}
+
+
+/* =========================
+   FEATURE TITLE
+   ========================= */
+
+.landing-feature-card h3 {
+  margin: 0;
+
+  color: #ffffff;
+
+  font-size: 21px;
+  line-height: 1.15;
+
+  font-weight: 750;
+  letter-spacing: -0.4px;
+}
+
+.landing-feature-line {
+  width: 36px;
+  height: 3px;
+
+  margin: 15px 0;
+
+  border-radius: 999px;
+
+  background: #27d7f5;
+
+  transition:
+    width 0.28s ease;
+}
+
+
+/* =========================
+   FEATURE DESCRIPTION
+   ========================= */
+
+.landing-feature-card p {
+  margin: 0;
+
+  color: #b9c5d9;
+
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+
+/* =========================
+   FEATURE HOVER
+   ========================= */
+
+.landing-feature-card:hover {
+  transform: scale(1.04);
+
+  border-color:
+    rgba(39, 215, 245, 0.95);
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(39, 215, 245, 0.11),
+      rgba(39, 215, 245, 0.025)
+    );
+
+  box-shadow:
+    0 18px 36px rgba(0, 0, 0, 0.18),
+    0 0 22px rgba(39, 215, 245, 0.08);
+}
+
+.landing-feature-card:hover
+.landing-feature-icon {
+  transform: scale(1.08);
+
+  background:
+    rgba(39, 215, 245, 0.15);
+
+  box-shadow:
+    0 0 18px
+    rgba(39, 215, 245, 0.18);
+}
+
+.landing-feature-card:hover
+.landing-feature-line {
+  width: 54px;
+}
+
+.landing-feature-card:hover::after {
+  left: 12%;
+  right: 12%;
+
+  opacity: 1;
+}
+
+
+/* =========================
+   RIGHT - ENTRY
+   ========================= */
+
+.landing-entry {
+  min-height: 100vh;
+
+  padding: 48px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #eaf0f7;
+}
+
+.landing-entry-card {
+  width: 100%;
+  max-width: 420px;
+}
+
+
+/* =========================
+   ENTRY HEADING
+   ========================= */
+
+.landing-entry-heading {
+  margin-bottom: 32px;
+}
+
+.landing-entry-heading h2 {
+  margin: 0 0 8px;
+
+  color: #202946;
+
+  font-size: 32px;
+  line-height: 1.2;
+
+  font-weight: 700;
+}
+
+.landing-entry-heading p {
+  margin: 0;
+
+  color: #66758c;
+
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+
+/* =========================
+   WORKSPACE FORM
+   ========================= */
+
+.workspace-form {
+  width: 100%;
+
+  display: grid;
+}
+
+.workspace-form-field {
+  margin-top: 22px;
+
+  display: grid;
+  gap: 8px;
+
+  color: #202946;
+
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.workspace-form-field:first-child {
+  margin-top: 0;
+}
+
+
+/* =========================
+   FORM INPUT
+   ========================= */
+
+.workspace-form-field input {
+  width: 100%;
+  height: 48px;
+
+  padding: 0 14px;
+
+  border:
+    1px solid #c5d5e7;
+
+  border-radius: 8px;
+
+  background: #ffffff;
+  color: #202946;
+
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.workspace-form-field input::placeholder {
+  color: #8a94a6;
+}
+
+.workspace-form-field input:focus {
+  border-color: #4896ac;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(72, 150, 172, 0.15);
+}
+
+
+/* =========================
+   FORM ERROR
+   ========================= */
+
+.workspace-form .form-error {
+  margin: 5px 0 0;
+
+  color: #d14343;
+
+  font-size: 13px;
+  font-weight: 400;
+}
+
+
+/* =========================
+   FORM BUTTON
+   ========================= */
+
+.workspace-form-submit {
+  width: 100%;
+  height: 48px;
+
+  margin-top: 24px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: #202946;
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.2s ease,
+    transform 0.15s ease;
+}
+
+.workspace-form-submit:hover {
+  background: #2d385f;
+}
+
+.workspace-form-submit:active {
+  transform: translateY(1px);
+}
+
+
+/* =========================
+   JOINED WORKSPACE
+   ========================= */
+
+.workspace-joined {
+  width: 100%;
+
+  text-align: center;
+}
+
+.workspace-joined-icon {
+  width: 64px;
+  height: 64px;
+
+  margin: 0 auto 22px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 50%;
+
+  background: #dff5e8;
+  color: #2f7d55;
+}
+
+.workspace-joined-icon svg {
+  width: 32px;
+  height: 32px;
+
+  stroke-width: 2.5;
+}
+
+.workspace-joined h2 {
+  margin: 0 0 10px;
+
+  color: #202946;
+
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.workspace-joined p {
+  margin: 0;
+
+  color: #66758c;
+
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.workspace-enter-button {
+  width: 100%;
+  height: 48px;
+
+  margin-top: 28px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: #202946;
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.2s ease,
+    transform 0.15s ease;
+}
+
+.workspace-enter-button:hover {
+  background: #2d385f;
+}
+
+.workspace-enter-button:active {
+  transform: translateY(1px);
+}
+
+
+/* =========================
+   MEDIUM SCREEN
+   ========================= */
+
+@media (max-width: 1100px) {
+  .landing-promo {
+    padding: 42px;
+  }
+
+  .landing-features {
+    gap: 10px;
+  }
+
+  .landing-feature-card {
+    height: 220px;
+    padding: 18px;
+  }
+
+  .landing-feature-card h3 {
+    font-size: 18px;
+  }
+
+  .landing-feature-card p {
+    font-size: 12px;
+  }
+}
+
+
+/* =========================
+   MOBILE
+   ========================= */
+
+@media (max-width: 800px) {
+  .landing-page {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-promo {
+    display: none;
+  }
+
+  .landing-entry {
+    padding: 24px;
+  }
+
+  .landing-entry-heading h2 {
+    font-size: 28px;
+  }
+
+  .workspace-form-field {
+    margin-top: 18px;
+  }
+
+  .workspace-form-submit {
+    margin-top: 22px;
+  }
+}
