@@ -155,7 +155,7 @@ function HomePage() {
               </span>
               <span className={`task-priority priority-${task.priority.toLowerCase()}`}>{task.priority}</span>
               <span className="task-due">{task.dueDate}</span>
-              <span className="task-assignee">{getMemberName(task.assignedMemberId)}</span>
+              <span className="task-assignee">{getMemberName(task.assignedMemberId ?? '')}</span>
             </li>
           ))}
         </ul>

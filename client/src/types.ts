@@ -1,18 +1,54 @@
-export type TaskStatus = "To Do" | "In Progress" | "Done";
-export type TaskPriority = "Low" | "Medium" | "High";
+export type TaskStatus =
+  | 'To Do'
+  | 'In Progress'
+  | 'Done'
+  | 'todo'
+  | 'in-progress'
+  | 'done'
 
-export interface Task {
-  id: string;
-  title: string;
-  description?: string;
-  status: TaskStatus;
-  priority: TaskPriority;
-  dueDate: string;
-  assignedMemberId: string; // now references a TeamMember's id, not a raw name
-}
+export type TaskPriority =
+  | 'Low'
+  | 'Medium'
+  | 'High'
+  | 'low'
+  | 'medium'
+  | 'high'
 
 export interface TeamMember {
-  id: string;
-  name: string;
-  email?: string;
+  id: string
+  name: string
+  email?: string
+}
+
+export interface Member {
+  id: string
+  name: string
+  initials: string
+  color: string
+}
+
+export interface Workspace {
+  id: string
+  name: string
+  inviteCode: string
+}
+
+export interface Task {
+  id: string
+  title: string
+  description?: string
+
+  status: TaskStatus
+  priority: TaskPriority
+
+  dueDate: string
+
+  // Homepage / newer implementation
+  assignedMemberId?: string
+
+  // Dashboard / sprint-board implementation
+  assignee?: Member
+  creator?: Member
+  workspaceId?: string
+  createdAt?: string
 }
