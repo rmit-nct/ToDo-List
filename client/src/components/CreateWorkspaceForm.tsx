@@ -37,7 +37,7 @@ function CreateWorkspaceForm() {
       creator: creatorIdentity,
     })
 
-    navigate(`/workspace/${workspaceId}`)
+    navigate(`/workspace/${workspaceId}/app/today`)
   }
 
   return (

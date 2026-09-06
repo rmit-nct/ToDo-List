@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { ListChecks, Users, TrendingUp, Check } from 'lucide-react'
 
 import JoinWorkspaceForm from '../components/JoinWorkspaceForm'
@@ -8,6 +8,8 @@ import './LandingPage.css'
 
 function LandingPage() {
   const { workspaceId } = useParams()
+  const navigate = useNavigate()
+
   const [hasJoined, setHasJoined] = useState(false)
 
   useEffect(() => {
@@ -117,6 +119,11 @@ function LandingPage() {
                 <button
                   className="workspace-enter-button"
                   type="button"
+                  onClick={() => {
+                    if (workspaceId) {
+                      navigate(`/workspace/${workspaceId}/app/today`)
+                    }
+                  }}
                 >
                   Enter Workspace
                 </button>
