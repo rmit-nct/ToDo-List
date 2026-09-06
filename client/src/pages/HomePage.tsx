@@ -1,75 +1,116 @@
-import { useState } from "react";
-import { mockTasks, mockMembers } from "../mockData";
-import type { TaskStatus, TaskPriority, TeamMember } from "../types";
-import "./HomePage.css"; // our new stylesheet for this page
+import { useState, useEffect } from "react";
+import type { Task, TaskStatus, TaskPriority, TeamMember } from "../types";
+import "./HomePage.css";
 
-// Sort options — same "only these exact words allowed" pattern as TaskStatus
 type SortOption = "Nearest Deadline" | "Newest";
 
+// Base URL for your backend — one constant, so if the port or domain
+// ever changes, you only update it in one place.
+const API_URL = "http://localhost:5000";
+
 function HomePage() {
-  // --- State for search/filter/sort ---
-  const [search, setSearch] = useState(""); // what's typed in the search box
+  // --- Real data, now starts empty and gets filled by fetch() ---
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [members, setMembers] = useState<TeamMember[]>([]);
+
+  // --- Loading and error state, now meaningful since a real network call can fail ---
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // --- Search/filter/sort state, unchanged ---
+  const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<TaskStatus | "All">("All");
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority | "All">("All");
   const [sortBy, setSortBy] = useState<SortOption>("Nearest Deadline");
 
-  // --- State for team members ---
-  const [members, setMembers] = useState<TeamMember[]>(mockMembers);
+  // --- Add member form state, unchanged ---
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
 
-  // --- Fake loading state ---
-  // Right now we have no real API, so this is always false.
-  // Later, when we fetch real tasks, we'll set this to true while waiting
-  // for the response, then false once data arrives.
-  const [isLoading] = useState(false);
+  // useEffect runs code automatically when the component first appears on screen.
+  // The empty array [] at the end means "only run this once, not on every re-render."
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setIsLoading(true);
+        setError(null);
 
-  // Step 1: filter the full task list down based on search + dropdowns
-  const filteredTasks = mockTasks.filter((task) => {
+        // Fetch both tasks and members at the same time
+        const [tasksRes, membersRes] = await Promise.all([
+          fetch(`${API_URL}/api/tasks`),
+          fetch(`${API_URL}/api/members`),
+        ]);
+
+        if (!tasksRes.ok || !membersRes.ok) {
+          throw new Error("Failed to load data from the server.");
+        }
+
+        const tasksData = await tasksRes.json();
+        const membersData = await membersRes.json();
+
+        setTasks(tasksData);
+        setMembers(membersData);
+      } catch (err) {
+        setError("Could not connect to the server. Is it running?");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadData();
+  }, []);
+
+  const filteredTasks = tasks.filter((task) => {
     const matchesSearch = task.title.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === "All" || task.status === statusFilter;
     const matchesPriority = priorityFilter === "All" || task.priority === priorityFilter;
-    // task only survives if it matches ALL three conditions
     return matchesSearch && matchesStatus && matchesPriority;
   });
 
-  // Step 2: sort the filtered list (doesn't touch the original array)
   const sortedTasks = [...filteredTasks].sort((a, b) => {
     if (sortBy === "Nearest Deadline") {
-      // smaller number (sooner date) comes first
       return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
     } else {
-      // higher id (created more recently) comes first
       return Number(b.id) - Number(a.id);
     }
   });
 
-  // Runs when the "Add Member" form is submitted
-  function handleAddMember(e: React.FormEvent) {
-    e.preventDefault(); // stop the page from reloading (default form behavior)
-
-    if (newName.trim() === "") return; // ignore empty/blank names
-
-    const newMember: TeamMember = {
-      id: crypto.randomUUID(), // random unique id, since we have no DB yet
-      name: newName,
-      email: newEmail.trim() === "" ? undefined : newEmail, // omit if blank
-    };
-
-    setMembers([...members, newMember]); // add to the list (never mutate directly)
-    setNewName("");   // clear the form
-    setNewEmail("");
+  function getMemberName(memberId: string): string {
+    const member = members.find((m) => m.id === memberId);
+    return member ? member.name : "Unassigned";
   }
-  
-function getMemberName(memberId: string): string {
-  const member = members.find((m) => m.id === memberId);
-  return member ? member.name : "Unassigned";
-}
+
+  // Now actually calls the real backend instead of just updating local state
+  async function handleAddMember(e: React.FormEvent) {
+    e.preventDefault();
+    if (newName.trim() === "") return;
+
+    try {
+      const res = await fetch(`${API_URL}/api/members`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newName,
+          email: newEmail.trim() === "" ? undefined : newEmail,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to add member.");
+
+      const createdMember = await res.json();
+      setMembers([...members, createdMember]); // add the server's response, not our own guess
+
+      setNewName("");
+      setNewEmail("");
+    } catch (err) {
+      setError("Could not add member. Try again.");
+    }
+  }
+
   return (
     <div className="homepage">
       <h1>Homepage</h1>
 
-      {/* --- Search + Filter + Sort controls --- */}
       <div className="controls">
         <label htmlFor="search-input" className="visually-hidden">Search tasks by title</label>
         <input
@@ -97,9 +138,11 @@ function getMemberName(memberId: string): string {
         </select>
       </div>
 
-      {/* --- Task list: loading, empty, or filled --- */}
+      {/* Loading, error, empty, or filled — in that priority order */}
       {isLoading ? (
         <p className="status-message">Loading tasks...</p>
+      ) : error ? (
+        <p className="status-message" style={{ color: "#e53935" }}>{error}</p>
       ) : sortedTasks.length === 0 ? (
         <p className="status-message">No tasks match your filters.</p>
       ) : (
@@ -118,7 +161,6 @@ function getMemberName(memberId: string): string {
         </ul>
       )}
 
-      {/* --- Team Members section --- */}
       <h2>Team Members</h2>
 
       {members.length === 0 ? (
@@ -135,24 +177,24 @@ function getMemberName(memberId: string): string {
       )}
 
       <form className="member-form" onSubmit={handleAddMember}>
-      <label htmlFor="member-name" className="visually-hidden">Member name</label>
-      <input
-        id="member-name"
-        type="text"
-        placeholder="Name"
-        value={newName}
-        onChange={(e) => setNewName(e.target.value)}
-      />
-      <label htmlFor="member-email" className="visually-hidden">Member email (optional)</label>
-      <input
-        id="member-email"
-        type="email"
-        placeholder="Email (optional)"
-        value={newEmail}
-        onChange={(e) => setNewEmail(e.target.value)}
-      />
-      <button type="submit">Add Member</button>
-    </form>
+        <label htmlFor="member-name" className="visually-hidden">Member name</label>
+        <input
+          id="member-name"
+          type="text"
+          placeholder="Name"
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+        />
+        <label htmlFor="member-email" className="visually-hidden">Member email (optional)</label>
+        <input
+          id="member-email"
+          type="email"
+          placeholder="Email (optional)"
+          value={newEmail}
+          onChange={(e) => setNewEmail(e.target.value)}
+        />
+        <button type="submit">Add Member</button>
+      </form>
     </div>
   );
 }
