@@ -41,12 +41,12 @@ function CreateWorkspaceForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <h2>Create Workspace</h2>
+    <form 
+      className="workspace-form"
+      onSubmit={handleSubmit(onSubmit)}
+    >
 
-      <p>Create a new workspace for your team.</p>
-
-      <label>
+      <label className="workspace-form-field">
         Workspace Name
         <input
           type="text"
@@ -56,10 +56,12 @@ function CreateWorkspaceForm() {
       </label>
 
       {errors.workspaceName && (
-        <p>{errors.workspaceName.message}</p>
+        <p className="form-error">
+          {errors.workspaceName.message}
+        </p>
       )}
 
-      <label>
+      <label className="workspace-form-field">
         Your Name
         <input
           type="text"
@@ -69,10 +71,15 @@ function CreateWorkspaceForm() {
       </label>
 
       {errors.memberName && (
-        <p>{errors.memberName.message}</p>
+        <p className="form-error">
+          {errors.memberName.message}
+        </p>
       )}
 
-      <button type="submit">
+      <button
+        className="workspace-form-submit"
+        type="submit"
+      >
         Create Workspace
       </button>
     </form>

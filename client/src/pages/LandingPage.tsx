@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { ListChecks, Users, TrendingUp, Check } from 'lucide-react'
+
 import JoinWorkspaceForm from '../components/JoinWorkspaceForm'
 import CreateWorkspaceForm from '../components/CreateWorkspaceForm'
+import './LandingPage.css'
 
 function LandingPage() {
   const { workspaceId } = useParams()
@@ -21,36 +24,127 @@ function LandingPage() {
   }, [workspaceId])
 
   return (
-    <main>
-      <section>
-        <h1>Your team. One board.</h1>
+    <main className="landing-page">
+      <section className="landing-promo">
+        <div className="landing-brand">
+          <div className="landing-brand-mark">N</div>
 
-        <p>
-          A collaborative task-management space for student teams and club committees.
-        </p>
+          <div className="landing-brand-text">
+            <strong>NEO</strong>
+            <span>To-do</span>
+          </div>
+        </div>
+
+        <div className="landing-promo-content">
+          <div className="landing-kicker">
+            COLLABORATIVE TASK MANAGEMENT
+          </div>
+
+          <h1>
+            Your team.
+            <br />
+            <span>One board.</span>
+          </h1>
+
+          <div className="landing-title-line" />
+
+          <p className="landing-description">
+            A collaborative task-management space for student teams
+            and club committees.
+          </p>
+        </div>
+
+        <div className="landing-features">
+          <div className="landing-feature-card">
+            <div className="landing-feature-icon">
+              <ListChecks />
+            </div>
+
+            <h3>Stay organized</h3>
+
+            <div className="landing-feature-line" />
+
+            <p>
+              Keep your team's tasks structured and easy to manage.
+            </p>
+          </div>
+
+          <div className="landing-feature-card">
+            <div className="landing-feature-icon">
+              <Users />
+            </div>
+
+            <h3>Work together</h3>
+
+            <div className="landing-feature-line" />
+
+            <p>
+              Collaborate with your team and keep everyone aligned.
+            </p>
+          </div>
+
+          <div className="landing-feature-card">
+            <div className="landing-feature-icon">
+              <TrendingUp />
+            </div>
+
+            <h3>Stay on track</h3>
+
+            <div className="landing-feature-line" />
+
+            <p>
+              Follow progress and see what needs your attention next.
+            </p>
+          </div>
+        </div>
       </section>
 
-      <section>
-        {workspaceId ? (
-          hasJoined ? (
-            <>
-              <h2>Workspace</h2>
-              <p>You have joined this workspace.</p>
-            </>
+      <section className="landing-entry">
+        <div className="landing-entry-card">
+          {workspaceId ? (
+            hasJoined ? (
+              <div className="workspace-joined">
+                <div className="workspace-joined-icon">
+                <Check />
+                </div>
+
+                <h2>You're in!</h2>
+
+                <p>
+                  You have joined this workspace successfully.
+                </p>
+
+                <button
+                  className="workspace-enter-button"
+                  type="button"
+                >
+                  Enter Workspace
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="landing-entry-heading">
+                  <h2>Join Workspace</h2>
+                  <p>Enter your details to join this workspace.</p>
+                </div>
+
+                <JoinWorkspaceForm
+                  workspaceId={workspaceId}
+                  onJoined={() => setHasJoined(true)}
+                />
+              </>
+            )
           ) : (
             <>
-              <h2>Join Workspace</h2>
-              <p>Workspace ID: {workspaceId}</p>
+              <div className="landing-entry-heading">
+                <h2>Create Workspace</h2>
+                <p>Create a workspace and invite your team.</p>
+              </div>
 
-              <JoinWorkspaceForm
-                workspaceId={workspaceId}
-                onJoined={() => setHasJoined(true)}
-              />
+              <CreateWorkspaceForm />
             </>
-          )
-        ) : (
-          <CreateWorkspaceForm />
-        )}
+          )}
+        </div>
       </section>
     </main>
   )
