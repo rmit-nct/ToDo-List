@@ -47,10 +47,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           OVERVIEW
         </p>
 
-        <span className="future-nav">
-          <Home />
+        <NavLink to={`/workspace/${workspaceId}/app/tasks`}>
+          <UserRoundCheck />
           Home
-        </span>
+        </NavLink>
 
         <span className="future-nav">
           <UserRoundCheck />

@@ -16,6 +16,7 @@ function WorkspaceApp() {
         <Routes>
           <Route path="today" element={<TodayDashboard />} />
           <Route path="board" element={<SprintBoard />} />
+          <Route path="tasks" element={<HomePage />} />
           <Route path="*" element={<Navigate to="today" replace />} />
         </Routes>
       </AppShell>
@@ -28,11 +29,6 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-
-        <Route
-          path="/tasks"
-          element={<HomePage />}
-        />
 
         <Route
           path="/workspace/:workspaceId"
