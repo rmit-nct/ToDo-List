@@ -29,9 +29,7 @@ function LandingPage() {
       return
     }
 
-    const identity = localStorage.getItem(
-      `memberIdentity:${workspaceId}`
-    )
+    const identity = localStorage.getItem(`memberIdentity:${workspaceId}`)
 
     setHasJoined(identity !== null)
 

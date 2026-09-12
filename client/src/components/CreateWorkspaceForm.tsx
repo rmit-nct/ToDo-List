@@ -128,8 +128,12 @@ function CreateWorkspaceForm() {
         <input
           type="text"
           placeholder="e.g. Human Resource Team"
+          aria-invalid={errors.workspaceName ? 'true' : 'false'}
           {...register('workspaceName')}
         />
+        {errors.workspaceName && (
+          <span className="form-error">{errors.workspaceName.message}</span>
+        )}
       </label>
 
       {errors.workspaceName && (
@@ -162,6 +166,9 @@ function CreateWorkspaceForm() {
           placeholder="you@example.com"
           {...register('creatorEmail')}
         />
+        {errors.memberName && (
+          <span className="form-error">{errors.memberName.message}</span>
+        )}
       </label>
 
       {errors.creatorEmail && (

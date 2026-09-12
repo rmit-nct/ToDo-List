@@ -109,8 +109,10 @@ function JoinWorkspaceForm({
         <input
           type="text"
           placeholder="Your name"
+          aria-invalid={errors.name ? 'true' : 'false'}
           {...register('name')}
         />
+        {errors.name && <span className="form-error">{errors.name.message}</span>}
       </label>
 
       {errors.name && (
@@ -125,8 +127,10 @@ function JoinWorkspaceForm({
         <input
           type="email"
           placeholder="you@neoculture.com"
+          aria-invalid={errors.email ? 'true' : 'false'}
           {...register('email')}
         />
+        {errors.email && <span className="form-error">{errors.email.message}</span>}
       </label>
 
       {errors.email && (
