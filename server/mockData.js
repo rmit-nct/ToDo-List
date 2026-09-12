@@ -35,6 +35,20 @@ const mockMembers = [
   { id: "m2", name: "Sam" },
 ];
 
+const mockWorkspaces = [
+  {
+    id: "workspace-1",
+    name: "Web Dev Team",
+    members: [
+      {
+        id: "member-1",
+        name: "Example User",
+        email: "example@neo.app",
+      },
+    ],
+  },
+];
+
 // module.exports is how plain Node.js files share things with other files —
 // it's the CommonJS equivalent of "export" in your TypeScript files.
-module.exports = { mockTasks, mockMembers };
+module.exports = { mockTasks, mockMembers, mockWorkspaces };

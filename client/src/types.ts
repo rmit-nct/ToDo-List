@@ -1,15 +1,9 @@
 export type TaskStatus =
-  | 'To Do'
-  | 'In Progress'
-  | 'Done'
   | 'todo'
   | 'in-progress'
   | 'done'
 
 export type TaskPriority =
-  | 'Low'
-  | 'Medium'
-  | 'High'
   | 'low'
   | 'medium'
   | 'high'
@@ -37,13 +31,11 @@ export interface Task {
   id: string
   title: string
   description?: string
-
   status: TaskStatus
   priority: TaskPriority
-
   dueDate: string
 
-  // Homepage / newer implementation
+  // Homepage compatibility
   assignedMemberId?: string
 
   // Dashboard / sprint-board implementation
