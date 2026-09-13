@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../api'
+import { useTasks } from '../taskStoreContext'
 
 import {
   useEffect,
@@ -8,7 +9,6 @@ import {
 import {
   CalendarDays,
   ChevronDown,
-  CircleHelp,
   Home,
   LayoutDashboard,
   Menu,
@@ -44,6 +44,7 @@ export function AppShell({
   children: ReactNode
 }) {
   const { workspaceId } = useParams()
+  const { error, isLoading, clearError } = useTasks()
 
   const [dark, setDark] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -210,10 +211,6 @@ export function AppShell({
           Settings
         </span>
 
-        <button type="button">
-          <CircleHelp />
-          Help & support
-        </button>
 
         <div className="profile">
           <span className="avatar">
@@ -335,6 +332,8 @@ export function AppShell({
           </button>
         </div>
 
+        {isLoading ? <div className="api-status" role="status">Loading tasks...</div> : null}
+        {error ? <div className="api-status api-status-error" role="alert"><span>{error}</span><button onClick={clearError} aria-label="Dismiss message">×</button></div> : null}
         {children}
       </main>
     </div>

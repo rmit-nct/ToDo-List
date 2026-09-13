@@ -358,17 +358,39 @@ app.post("/api/workspaces/:workspaceId/members", async (req, res) => {
   }
 });
 
-const PORT = 5001;
+const PORT = Number(process.env.PORT || 5001);
+let localDatabase;
+let server;
 
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log("Connected to MongoDB Atlas");
-
-    app.listen(PORT, () => {
-      console.log(`Server running on http://localhost:${PORT}`);
+async function start() {
+  let uri = process.env.MONGODB_URI?.trim();
+  if (!uri) {
+    if (process.env.NODE_ENV === "production") throw new Error("MONGODB_URI is required in production");
+    const { MongoMemoryServer } = require("mongodb-memory-server");
+    const path = require("node:path");
+    const fs = require("node:fs/promises");
+    const dbPath = path.join(__dirname, ".mongodb-data");
+    await fs.mkdir(dbPath, { recursive: true });
+    localDatabase = await MongoMemoryServer.create({
+      instance: { dbPath, dbName: "neo-workspaces", storageEngine: "wiredTiger" },
     });
-  })
-  .catch((error) => {
-    console.error("MongoDB connection error:", error);
-  });
+    uri = localDatabase.getUri("neo-workspaces");
+  }
+  await mongoose.connect(uri);
+  server = app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+}
+
+async function shutdown() {
+  if (server) await new Promise((resolve) => server.close(resolve));
+  await mongoose.disconnect();
+  await localDatabase?.stop();
+  process.exit(0);
+}
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
+start().catch(async (error) => {
+  console.error("Database startup failed:", error.message);
+  await mongoose.disconnect();
+  await localDatabase?.stop();
+  process.exit(1);
+});

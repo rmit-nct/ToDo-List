@@ -206,7 +206,7 @@ function HomePage() {
 
       setNewName("");
       setNewEmail("");
-    } catch (err) {
+    } catch {
       setError(
         "Could not add member. Try again."
       );
