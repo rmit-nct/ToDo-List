@@ -8,12 +8,12 @@ Requires Node.js 20.19 or newer and npm.
 
 Start the backend:
 ```bash
-cd server
+cd backend
 npm install
 npm run dev
 ```
 
-The API listens on port 5001. When MONGODB_URI is absent, a local MongoDB instance starts automatically and stores development data in server/.mongodb-data (ignored by Git). The first run may download MongoDB. For Atlas or an existing database, copy server/.env.example to server/.env and set MONGODB_URI. Production requires MONGODB_URI and NODE_ENV=production.
+The API listens on port 5001. When MONGODB_URI is absent, a local MongoDB instance starts automatically and stores development data in backend/.mongodb-data (ignored by Git). The first run may download MongoDB. For Atlas or an existing database, copy backend/.env.example to backend/.env and set MONGODB_URI. Production requires MONGODB_URI and NODE_ENV=production.
 
 In another terminal:
 ```bash
@@ -45,6 +45,6 @@ The task model and IDs follow the shared backend already merged into main. Task 
 cd client
 npm run build
 npm run lint
-cd ../server
+cd ../backend
 node --check server.js
 ```
