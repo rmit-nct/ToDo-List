@@ -1,17 +1,11 @@
 /* Pull in the same fonts the Figma design uses */
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
 
-/* Design tokens copied from the NEO Figma mockup's color palette.
-   Keeping them as CSS variables means if the team wants to re-theme
-   later (e.g. dark mode), it's a one-place change. */
+/* Removed our own --bg, --text, --text-muted, --border, --navy —
+   these now come from app.css's shared :root/.theme-dark tokens instead,
+   so toggling dark mode anywhere in the app affects this page automatically. */
 :root {
-  --bg: #E3EDF9;
-  --surface: #ffffff;
   --surface2: #f4f7fb;
-  --text: #202946;
-  --text-muted: #4896AC;
-  --border: #c8d9e8;
-  --accent: #4896AC;
   --accent2: #FBB61B;
   --tag-todo: #E3EDF9;
   --tag-todo-text: #4896AC;
@@ -24,18 +18,33 @@
   --priority-low: #4896AC;
   --font-display: 'Barlow', sans-serif;
   --font-body: 'Inter', sans-serif;
-  --navy: #202946;
+}
+
+/* Dark-mode versions of the tokens that aren't already covered by
+   app.css's shared theme-dark block (tag/priority colors are specific
+   to this page, so we override them here rather than in the global file). */
+.theme-dark {
+  --surface2: #2a2838;
+  --tag-todo: #1e2a38;
+  --tag-todo-text: #8ce7ff;
+  --tag-inprog: #3a3320;
+  --tag-inprog-text: #ffe120;
+  --tag-done: #1e3a2e;
+  --tag-done-text: #6fdba0;
+  --priority-high: #ff6b5c;
+  --priority-medium: #ffe120;
+  --priority-low: #8ce7ff;
 }
 
 body {
-  background: var(--bg);
+  background: var(--canvas);
 }
 
 .homepage {
   padding: 24px;
   font-family: var(--font-body);
-  color: var(--text);
-  max-width: 800px;
+  color: var(--ink);
+  max-width: 1500px;
   margin: 0 auto;
 }
 
@@ -56,35 +65,40 @@ body {
 .controls input,
 .controls select {
   padding: 8px 10px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--line);
   border-radius: 8px;
   font-size: 14px;
   font-family: var(--font-body);
   background: var(--surface);
-  color: var(--text);
+  color: var(--ink);
 }
 
 /* Task list container */
 .task-list {
   list-style: none;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
   margin-bottom: 24px;
 }
 
-/* Task card — matches the Figma TaskCard component's look */
 .task-card {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 14px;
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid var(--line);
   border-radius: 10px;
   transition: box-shadow 0.15s, background 0.15s;
-  flex-wrap: wrap;
+}
+
+.task-title {
+  font-weight: 600;
+  font-size: 13px;
+  width: 100%;
 }
 
 .task-card:hover {
@@ -92,15 +106,6 @@ body {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
-.task-title {
-  font-weight: 600;
-  font-size: 13px;
-  flex: 1;
-  min-width: 160px;
-}
-
-/* Status badge — colors chosen to match the status text via the
-   status-todo / status-inprogress / status-done class we add in HomePage.tsx */
 .task-status {
   font-size: 10px;
   font-weight: 600;
@@ -125,7 +130,6 @@ body {
   color: var(--tag-done-text);
 }
 
-/* Priority badge */
 .task-priority {
   font-size: 10px;
   font-weight: 600;
@@ -153,17 +157,15 @@ body {
 .task-due,
 .task-assignee {
   font-size: 11px;
-  color: var(--text-muted);
+  color: var(--muted);
 }
 
-/* Loading / empty state message */
 .status-message {
-  color: var(--text-muted);
+  color: var(--muted);
   font-style: italic;
   padding: 16px 0;
 }
 
-/* Team members list */
 .member-list {
   list-style: none;
   padding: 0;
@@ -172,11 +174,10 @@ body {
 
 .member-list li {
   padding: 8px 10px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--line);
   font-size: 14px;
 }
 
-/* Add member form */
 .member-form {
   display: flex;
   gap: 8px;
@@ -185,9 +186,11 @@ body {
 
 .member-form input {
   padding: 8px 10px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--line);
   border-radius: 8px;
   font-family: var(--font-body);
+  background: var(--surface);
+  color: var(--ink);
 }
 
 .member-form button {
@@ -203,10 +206,18 @@ body {
 }
 
 .member-form button:hover {
-  background: #141b30;
+  background: color-mix(in srgb, var(--navy) 80%, black);
 }
 
-/* Responsive: stack on small screens */
+.theme-dark .member-form button {
+  background: var(--yellow);
+  color: var(--canvas);
+}
+
+.theme-dark .member-form button:hover {
+  background: color-mix(in srgb, var(--yellow) 80%, black );
+}
+
 @media (max-width: 500px) {
   .controls {
     flex-direction: column;
@@ -217,7 +228,6 @@ body {
   }
 }
 
-/* Hides text visually but keeps it available to screen readers */
 .visually-hidden {
   position: absolute;
   width: 1px;
