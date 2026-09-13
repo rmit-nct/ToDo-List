@@ -1,4 +1,10 @@
-import { useState, type ReactNode } from 'react'
+import { API_BASE_URL } from '../api'
+
+import {
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react'
 import {
   CalendarDays,
   ChevronDown,
@@ -13,17 +19,91 @@ import {
   UserRoundCheck,
   X,
 } from 'lucide-react'
-import { NavLink, useParams } from 'react-router-dom'
+import {
+  NavLink,
+  useParams,
+} from 'react-router-dom'
 
-import { members } from '../data'
 import { BrandLogo } from './BrandLogo'
 
-export function AppShell({ children }: { children: ReactNode }) {
+type WorkspaceData = {
+  id: string
+  name: string
+}
+
+type MemberIdentity = {
+  workspaceId: string
+  id: string
+  name: string
+  email?: string
+}
+
+export function AppShell({
+  children,
+}: {
+  children: ReactNode
+}) {
   const { workspaceId } = useParams()
 
   const [dark, setDark] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [workspaceOpen, setWorkspaceOpen] = useState(true)
+  const [workspaceOpen, setWorkspaceOpen] =
+    useState(true)
+
+  const [workspace, setWorkspace] =
+    useState<WorkspaceData | null>(null)
+
+  const [member, setMember] =
+    useState<MemberIdentity | null>(null)
+
+  useEffect(() => {
+    if (!workspaceId) {
+      return
+    }
+
+    const savedIdentity = localStorage.getItem(
+      `memberIdentity:${workspaceId}`
+    )
+
+    if (savedIdentity) {
+      try {
+        const parsedIdentity =
+          JSON.parse(savedIdentity)
+
+        setMember(parsedIdentity)
+      } catch {
+        setMember(null)
+      }
+    }
+
+    const loadWorkspace = async () => {
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/workspaces/${workspaceId}`
+        )
+
+        if (!response.ok) {
+          throw new Error(
+            'Failed to load workspace'
+          )
+        }
+
+        const data = await response.json()
+
+        setWorkspace({
+          id: data.id,
+          name: data.name,
+        })
+      } catch (error) {
+        console.error(
+          'Workspace load error:',
+          error
+        )
+      }
+    }
+
+    loadWorkspace()
+  }, [workspaceId])
 
   const handleShareWorkspace = async () => {
     if (!workspaceId) {
@@ -33,7 +113,23 @@ export function AppShell({ children }: { children: ReactNode }) {
     const shareUrl =
       `${window.location.origin}/workspace/${workspaceId}`
 
-    await navigator.clipboard.writeText(shareUrl)
+    await navigator.clipboard.writeText(
+      shareUrl
+    )
+  }
+
+  const getInitials = (name?: string) => {
+    if (!name) {
+      return '?'
+    }
+
+    return name
+      .split(' ')
+      .filter(Boolean)
+      .map((part) => part[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase()
   }
 
   const nav = (
@@ -47,9 +143,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           OVERVIEW
         </p>
 
-        <NavLink to={`/workspace/${workspaceId}/app/tasks`}>
-          <UserRoundCheck />
-          Home
+        <NavLink to={`/workspace/${workspaceId}/app/home`}>
+          <Home />
+          Homepage
         </NavLink>
 
         <span className="future-nav">
@@ -61,20 +157,29 @@ export function AppShell({ children }: { children: ReactNode }) {
           type="button"
           className="workspace-select central-workspace"
           onClick={() =>
-            setWorkspaceOpen((value) => !value)
+            setWorkspaceOpen(
+              (value) => !value
+            )
           }
           aria-expanded={workspaceOpen}
         >
           <span className="workspace-dot">
-            W
+            {getInitials(
+              workspace?.name
+            ).slice(0, 1)}
           </span>
 
           <span>
-            Web Dev Team
+            {workspace?.name ??
+              'Loading workspace...'}
           </span>
 
           <ChevronDown
-            className={workspaceOpen ? 'rotate' : ''}
+            className={
+              workspaceOpen
+                ? 'rotate'
+                : ''
+            }
           />
         </button>
 
@@ -109,20 +214,19 @@ export function AppShell({ children }: { children: ReactNode }) {
         </button>
 
         <div className="profile">
-          <span
-            className="avatar"
-            data-member={members[0]?.id ?? ''}
-          >
-            MN
+          <span className="avatar">
+            {getInitials(member?.name)}
           </span>
 
           <div>
             <strong>
-              My Ngoc
+              {member?.name ??
+                'Workspace Member'}
             </strong>
 
             <small>
-              myngoc@neo.app
+              {member?.email ||
+                'No email'}
             </small>
           </div>
 
@@ -133,7 +237,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   )
 
   return (
-    <div className={dark ? 'app theme-dark' : 'app'}>
+    <div
+      className={
+        dark
+          ? 'app theme-dark'
+          : 'app'
+      }
+    >
       <aside
         className={
           menuOpen
@@ -149,7 +259,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           type="button"
           className="scrim"
           aria-label="Close menu"
-          onClick={() => setMenuOpen(false)}
+          onClick={() =>
+            setMenuOpen(false)
+          }
         />
       ) : null}
 
@@ -158,9 +270,15 @@ export function AppShell({ children }: { children: ReactNode }) {
           <button
             type="button"
             aria-label="Open menu"
-            onClick={() => setMenuOpen(true)}
+            onClick={() =>
+              setMenuOpen(true)
+            }
           >
-            {menuOpen ? <X /> : <Menu />}
+            {menuOpen ? (
+              <X />
+            ) : (
+              <Menu />
+            )}
           </button>
 
           <BrandLogo compact />
@@ -169,10 +287,16 @@ export function AppShell({ children }: { children: ReactNode }) {
             type="button"
             aria-label="Toggle color theme"
             onClick={() =>
-              setDark((value) => !value)
+              setDark(
+                (value) => !value
+              )
             }
           >
-            {dark ? <Sun /> : <Moon />}
+            {dark ? (
+              <Sun />
+            ) : (
+              <Moon />
+            )}
           </button>
         </header>
 
@@ -180,7 +304,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           <button
             type="button"
             className="share-workspace-button"
-            onClick={handleShareWorkspace}
+            onClick={
+              handleShareWorkspace
+            }
           >
             <Share2 />
             Share Workspace
@@ -190,11 +316,20 @@ export function AppShell({ children }: { children: ReactNode }) {
             type="button"
             className="theme-toggle"
             onClick={() =>
-              setDark((value) => !value)
+              setDark(
+                (value) => !value
+              )
             }
           >
-            {dark ? <Sun /> : <Moon />}
-            {dark ? 'Light' : 'Dark'}
+            {dark ? (
+              <Sun />
+            ) : (
+              <Moon />
+            )}
+
+            {dark
+              ? 'Light'
+              : 'Dark'}
           </button>
         </div>
 

@@ -742,18 +742,27 @@ nav a.active {
 
 .task-list {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
 .task-card {
+  width: 100%;
+  min-width: 0;
+
+  padding: 15px;
+
+  display: flex;
+  flex-direction: column;
+
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 11px;
-  padding: 15px;
-  min-width: 0;
+
   cursor: pointer;
-  box-shadow: 0 5px 15px rgba(32, 41, 70, 0.035);
+
+  box-shadow: none;
+
   transition:
     transform 0.16s,
     box-shadow 0.16s,
@@ -762,101 +771,203 @@ nav a.active {
 
 .task-card:hover {
   transform: translateY(-2px);
-  border-color:
-    color-mix(in srgb, var(--teal) 45%, var(--line));
-  box-shadow: 0 10px 24px rgba(32, 41, 70, 0.09);
+  border-color: color-mix(in srgb, var(--teal) 45%, var(--line));
+  box-shadow: 0 7px 18px rgba(32, 41, 70, 0.07);
 }
+
+
+/* Top */
 
 .card-top {
+  width: 100%;
+
   display: flex;
-  justify-content: space-between;
   align-items: center;
-}
+  justify-content: space-between;
 
-.card-top button {
-  border: 0;
-  background: transparent;
-  color: #8790a3;
-  padding: 0;
-}
+  gap: 10px;
 
-.card-top svg {
-  width: 18px;
+  margin-bottom: 12px;
 }
 
 .priority {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 4px 8px;
+
+  border: 1px solid var(--line);
+  border-radius: 5px;
+
+  background: transparent;
+  color: var(--muted);
+
   text-transform: uppercase;
+
   font-size: 8px;
   font-weight: 700;
-  letter-spacing: 0.9px;
-  padding: 4px 7px;
-  border-radius: 5px;
+  letter-spacing: 0.8px;
+  line-height: 1;
 }
 
 .priority.high {
-  color: #c96153;
-  background: #fae9e6;
+  border-color: #202946;
+  color: #202946;
 }
 
 .priority.medium {
-  color: #a87509;
-  background: #fff3d6;
+  border-color: #fbb61b;
+  color: #8d6500;
 }
 
 .priority.low {
-  color: #397f5a;
-  background: #e7f3ec;
+  border-color: #4896ac;
+  color: #34788b;
 }
 
-.task-card h3 {
-  font: 700 13px/1.35 Poppins;
-  margin: 12px 0 5px;
+
+/* More button */
+
+.task-more-button {
+  width: 26px;
+  height: 26px;
+
+  padding: 0;
+
+  display: grid;
+  place-items: center;
+
+  flex: none;
+
+  border: 0;
+  border-radius: 6px;
+
+  background: transparent;
+  color: #8790a3;
+
+  cursor: pointer;
 }
 
-.task-card p {
-  font-size: 10px;
-  color: var(--muted);
+.task-more-button:hover {
+  background: color-mix(in srgb, var(--teal) 8%, transparent);
+  color: var(--ink);
+}
+
+.task-more-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+
+/* Content */
+
+.task-card-content {
+  width: 100%;
+  min-width: 0;
+}
+
+.task-card-content h3 {
   margin: 0;
-  line-height: 1.45;
-  min-height: 28px;
+
+  color: var(--ink);
+
+  font: 700 13px/1.4 Poppins;
+
+  text-align: left;
+  overflow-wrap: anywhere;
 }
 
-.task-card footer {
-  border-top: 1px solid var(--line);
+.task-card-content p {
+  margin: 5px 0 0;
+
+  color: var(--muted);
+
+  font-size: 9px;
+  line-height: 1.45;
+
+  text-align: left;
+
+  overflow: hidden;
+}
+
+.task-card-no-description {
+  opacity: 0.55;
+  font-style: italic;
+}
+
+
+/* Footer */
+
+.task-card-footer {
+  width: 100%;
+
   margin-top: 14px;
-  padding-top: 11px;
+  padding-top: 10px;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
+
+  gap: 10px;
+
+  border-top: 1px solid var(--line);
 }
 
 .date {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
+
+  gap: 5px;
+
   color: var(--muted);
+
   font-size: 9px;
+
+  white-space: nowrap;
 }
 
 .date svg {
   width: 13px;
+  height: 13px;
+
+  flex: none;
+
+  color: var(--teal);
 }
 
 .task-card .avatar {
-  width: 25px;
-  height: 25px;
+  width: 26px;
+  height: 26px;
+
+  display: grid;
+  place-items: center;
+
+  flex: none;
+
+  border-radius: 50%;
+
   font-size: 8px;
+  font-weight: 700;
 }
 
+
+/* Empty task group */
+
 .empty-state {
-  border: 1px dashed var(--line);
-  border-radius: 10px;
   min-height: 82px;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   gap: 10px;
+
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+
   color: var(--muted);
+
   font-size: 11px;
 }
 
@@ -969,7 +1080,7 @@ nav a.active {
 }
 
 .column-tasks .task-card {
-  min-height: 146px;
+  min-height: 0;
 }
 
 .add-card {

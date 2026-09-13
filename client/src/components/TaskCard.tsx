@@ -14,9 +14,14 @@ export function TaskCard({
   task: Task
   onOpen: (task: Task) => void
 }) {
-  const assigneeName = task.assignee?.name ?? 'Unassigned'
-  const assigneeId = task.assignee?.id ?? ''
-  const assigneeInitials = task.assignee?.initials ?? '—'
+  const assigneeName =
+    task.assignee?.name ?? 'Unassigned'
+
+  const assigneeId =
+    task.assignee?.id ?? ''
+
+  const assigneeInitials =
+    task.assignee?.initials ?? '—'
 
   return (
     <article
@@ -24,27 +29,47 @@ export function TaskCard({
       tabIndex={0}
       onClick={() => onOpen(task)}
       onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
+        if (
+          event.key === 'Enter' ||
+          event.key === ' '
+        ) {
           event.preventDefault()
           onOpen(task)
         }
       }}
     >
       <div className="card-top">
-        <span className={`priority ${task.priority}`}>
+        <span
+          className={`priority ${task.priority}`}
+        >
           {task.priority}
         </span>
 
-        <MoreHorizontal />
+        <button
+          type="button"
+          className="task-more-button"
+          aria-label="Task options"
+          onClick={(event) =>
+            event.stopPropagation()
+          }
+        >
+          <MoreHorizontal />
+        </button>
       </div>
 
-      <h3>{task.title}</h3>
+      <div className="task-card-content">
+        <h3>{task.title}</h3>
 
-      {task.description ? (
-        <p>{task.description}</p>
-      ) : null}
+        {task.description ? (
+          <p>{task.description}</p>
+        ) : (
+          <p className="task-card-no-description">
+            No description
+          </p>
+        )}
+      </div>
 
-      <footer>
+      <footer className="task-card-footer">
         <span className="date">
           <Calendar />
           {dateLabel(task.dueDate)}

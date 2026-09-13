@@ -1,10 +1,15 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 
-import { members } from '../data'
+import { API_BASE_URL } from '../api'
 import { useTasks } from '../taskStoreContext'
-import type { Task, TaskPriority, TaskStatus } from '../types'
+import type {
+  Member,
+  Task,
+  TaskPriority,
+  TaskStatus,
+} from '../types'
 
 type FormValues = {
   title: string
@@ -13,6 +18,12 @@ type FormValues = {
   priority: TaskPriority
   assigneeId: string
   dueDate: string
+}
+
+type WorkspaceMember = {
+  id: string
+  name: string
+  email?: string
 }
 
 export function TaskModal({
@@ -26,6 +37,12 @@ export function TaskModal({
 }) {
   const { saveTask, deleteTask } = useTasks()
 
+  const [members, setMembers] =
+    useState<Member[]>([])
+
+  const [memberError, setMemberError] =
+    useState<string | null>(null)
+
   const {
     register,
     handleSubmit,
@@ -34,11 +51,77 @@ export function TaskModal({
   } = useForm<FormValues>()
 
   useEffect(() => {
+    const loadMembers = async () => {
+      try {
+        setMemberError(null)
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/workspaces/${workspaceId}`
+        )
+
+        if (!response.ok) {
+          throw new Error(
+            'Failed to load workspace members'
+          )
+        }
+
+        const workspace =
+          await response.json()
+
+        const workspaceMembers: Member[] =
+          workspace.members.map(
+            (
+              member: WorkspaceMember,
+              index: number
+            ) => ({
+              id: member.id,
+              name: member.name,
+
+              initials: member.name
+                .split(' ')
+                .filter(Boolean)
+                .map((part) => part[0])
+                .join('')
+                .slice(0, 2)
+                .toUpperCase(),
+
+              color: [
+                '#fbb61b',
+                '#4896ac',
+                '#806cc1',
+                '#56a177',
+              ][index % 4],
+            })
+          )
+
+        setMembers(workspaceMembers)
+      } catch (error) {
+        console.error(
+          'Load members error:',
+          error
+        )
+
+        setMemberError(
+          'Could not load workspace members'
+        )
+      }
+    }
+
+    loadMembers()
+  }, [workspaceId])
+
+  useEffect(() => {
     reset({
       title: task?.title ?? '',
-      description: task?.description ?? '',
-      status: task?.status ?? 'todo',
-      priority: task?.priority ?? 'medium',
+
+      description:
+        task?.description ?? '',
+
+      status:
+        task?.status ?? 'todo',
+
+      priority:
+        task?.priority ?? 'medium',
 
       assigneeId:
         task?.assignee?.id ??
@@ -50,15 +133,21 @@ export function TaskModal({
         new Date().toISOString()
       ).slice(0, 10),
     })
-  }, [reset, task])
+  }, [reset, task, members])
 
-  const submit = (values: FormValues) => {
+  const submit = async (
+    values: FormValues
+  ) => {
     const assignee =
       members.find(
-        (member) => member.id === values.assigneeId
-      ) ?? members[0]
+        (member) =>
+          member.id === values.assigneeId
+      )
 
     if (!assignee) {
+      setMemberError(
+        'Please select an assignee'
+      )
       return
     }
 
@@ -67,20 +156,35 @@ export function TaskModal({
       members[0]
 
     if (!creator) {
+      setMemberError(
+        'Workspace has no members'
+      )
       return
     }
 
-    saveTask({
-      id: task?.id ?? crypto.randomUUID(),
+    await saveTask({
+      id:
+        task?.id ??
+        crypto.randomUUID(),
 
-      ...values,
+      title: values.title,
+
+      description:
+        values.description,
+
+      status: values.status,
+
+      priority:
+        values.priority,
 
       dueDate: new Date(
         `${values.dueDate}T12:00:00`
       ).toISOString(),
 
       assignee,
+
       creator,
+
       workspaceId,
 
       createdAt:
@@ -96,7 +200,10 @@ export function TaskModal({
       className="modal-backdrop"
       role="presentation"
       onMouseDown={(event) => {
-        if (event.currentTarget === event.target) {
+        if (
+          event.currentTarget ===
+          event.target
+        ) {
           onClose()
         }
       }}
@@ -110,7 +217,9 @@ export function TaskModal({
         <div className="modal-heading">
           <div>
             <span>
-              {task ? 'EDIT TASK' : 'NEW TASK'}
+              {task
+                ? 'EDIT TASK'
+                : 'NEW TASK'}
             </span>
 
             <h2 id="task-modal-title">
@@ -129,14 +238,17 @@ export function TaskModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit(submit)}>
+        <form
+          onSubmit={handleSubmit(submit)}
+        >
           <label className="full">
             Title
 
             <input
               autoFocus
               {...register('title', {
-                required: 'A title is required',
+                required:
+                  'A title is required',
               })}
             />
 
@@ -152,14 +264,18 @@ export function TaskModal({
 
             <textarea
               rows={3}
-              {...register('description')}
+              {...register(
+                'description'
+              )}
             />
           </label>
 
           <label>
             Status
 
-            <select {...register('status')}>
+            <select
+              {...register('status')}
+            >
               <option value="todo">
                 To do
               </option>
@@ -177,7 +293,9 @@ export function TaskModal({
           <label>
             Priority
 
-            <select {...register('priority')}>
+            <select
+              {...register('priority')}
+            >
               <option value="low">
                 Low
               </option>
@@ -195,15 +313,21 @@ export function TaskModal({
           <label>
             Assignee
 
-            <select {...register('assigneeId')}>
-              {members.map((member) => (
-                <option
-                  value={member.id}
-                  key={member.id}
-                >
-                  {member.name}
-                </option>
-              ))}
+            <select
+              {...register(
+                'assigneeId'
+              )}
+            >
+              {members.map(
+                (member) => (
+                  <option
+                    value={member.id}
+                    key={member.id}
+                  >
+                    {member.name}
+                  </option>
+                )
+              )}
             </select>
           </label>
 
@@ -218,13 +342,21 @@ export function TaskModal({
             />
           </label>
 
+          {memberError ? (
+            <small className="error full">
+              {memberError}
+            </small>
+          ) : null}
+
           <div className="modal-actions">
             {task ? (
               <button
                 type="button"
                 className="danger"
-                onClick={() => {
-                  deleteTask(task.id)
+                onClick={async () => {
+                  await deleteTask(
+                    task.id
+                  )
                   onClose()
                 }}
               >
@@ -246,6 +378,9 @@ export function TaskModal({
               <button
                 type="submit"
                 className="primary"
+                disabled={
+                  members.length === 0
+                }
               >
                 {task
                   ? 'Save changes'

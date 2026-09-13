@@ -618,6 +618,10 @@
   transform: translateY(1px);
 }
 
+.workspace-error-icon {
+  color: #e53935;
+  background: rgba(229, 57, 53, 0.1);
+}
 
 /* =========================
    MEDIUM SCREEN

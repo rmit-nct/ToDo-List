@@ -14,10 +14,13 @@ function WorkspaceApp() {
     <TaskStoreProvider>
       <AppShell>
         <Routes>
+          <Route path="home" element={<HomePage />} />
           <Route path="today" element={<TodayDashboard />} />
           <Route path="board" element={<SprintBoard />} />
-          <Route path="tasks" element={<HomePage />} />
-          <Route path="*" element={<Navigate to="today" replace />} />
+          <Route
+            path="*"
+            element={<Navigate to="home" replace />}
+          />
         </Routes>
       </AppShell>
     </TaskStoreProvider>
