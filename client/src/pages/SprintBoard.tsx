@@ -19,7 +19,7 @@ export function SprintBoard() {
   const [assignee, setAssignee] = useState('all');
   const [modalTask, setModalTask] = useState<Task | null | undefined>(undefined);
   const [collapsedColumns, setCollapsedColumns] = useState<Set<TaskStatus>>(() => new Set());
-  const filtered = useMemo(() => tasks.filter((task) => task.workspaceId === workspaceId && task.title.toLowerCase().includes(query.toLowerCase()) && (assignee === 'all' || task.assignee.id === assignee)), [tasks, query, assignee, workspaceId]);
+  const filtered = useMemo(() => tasks.filter((task) => task.workspaceId === workspaceId && task.title.toLowerCase().includes(query.toLowerCase()) && (assignee === 'all' || task.assignee?.id === assignee)), [tasks, query, assignee, workspaceId]);
   const toggleColumn = (status: TaskStatus) => setCollapsedColumns((current) => {
     const next = new Set(current);
     if (next.has(status)) next.delete(status);

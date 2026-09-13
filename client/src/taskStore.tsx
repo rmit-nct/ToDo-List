@@ -1,79 +1,61 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { useParams } from 'react-router-dom';
-import { taskApi } from './api/tasks';
-import { seedTasks } from './data';
-import type { Task } from './types';
-import { TaskStore, type TaskStoreValue } from './taskStoreContext';
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useParams } from 'react-router-dom'
+import { API_BASE_URL } from './api'
+import type { Task } from './types'
+import { TaskStore, type TaskStoreValue } from './taskStoreContext'
 
+async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}/api${path}`, {
+    ...options, headers: { 'Content-Type': 'application/json', ...options?.headers },
+  })
+  const body = await response.json().catch(() => null)
+  if (!response.ok) throw new Error(body?.error ?? body?.message ?? 'Unable to save changes. Please try again.')
+  return body as T
+}
 export function TaskStoreProvider({ children }: { children: ReactNode }) {
-  const { workspaceId = 'web-dev' } = useParams();
-  const [tasks, setTasks] = useState<Task[]>(seedTasks);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
+  const { workspaceId } = useParams()
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   useEffect(() => {
-    const controller = new AbortController();
-    setIsLoading(true);
-    taskApi.list(workspaceId, controller.signal)
-      .then((loadedTasks) => {
-        setTasks(loadedTasks);
-        setError(null);
+    const controller = new AbortController()
+    setTasks([]); setError(null)
+    if (!workspaceId) { setIsLoading(false); return }
+    setIsLoading(true)
+    request<Task[]>(`/tasks?${new URLSearchParams({ workspaceId })}`, { signal: controller.signal })
+      .then(setTasks)
+      .catch(() => {
+        if (!controller.signal.aborted) setError('Unable to load tasks. Please refresh to try again.')
       })
-      .catch((reason: unknown) => {
-        if (reason instanceof DOMException && reason.name === 'AbortError') return;
-        setError('Backend unavailable - showing demo tasks. Start the API and connect MongoDB to save changes.');
-      })
-      .finally(() => setIsLoading(false));
-    return () => controller.abort();
-  }, [workspaceId]);
-
-  const reportError = useCallback((reason: unknown) => {
-    const message = reason instanceof Error ? reason.message : 'The task request failed';
-    setError(message);
-    return reason;
-  }, []);
-
-  const saveTask = useCallback(async (task: Task, isNew: boolean) => {
-    try {
-      const { id: _id, createdAt: _createdAt, ...payload } = task;
-      const saved = isNew ? await taskApi.create(payload) : await taskApi.update(task.id, payload);
-      setTasks((current) => isNew
-        ? [saved, ...current]
-        : current.map((item) => item.id === saved.id ? saved : item));
-      setError(null);
-    } catch (reason) {
-      throw reportError(reason);
+      .finally(() => { if (!controller.signal.aborted) setIsLoading(false) })
+    return () => controller.abort()
+  }, [workspaceId])
+  const value = useMemo<TaskStoreValue>(() => {
+    const perform = async <T,>(operation: () => Promise<T>) => {
+      try { const result = await operation(); setError(null); return result }
+      catch (reason) {
+        setError(reason instanceof Error ? reason.message : 'Unable to save changes.')
+        throw reason
+      }
     }
-  }, [reportError]);
-
-  const deleteTask = useCallback(async (id: string) => {
-    try {
-      await taskApi.delete(id);
-      setTasks((current) => current.filter((task) => task.id !== id));
-      setError(null);
-    } catch (reason) {
-      throw reportError(reason);
+    return {
+      tasks, error, isLoading, clearError: () => setError(null),
+      saveTask: async (task) => perform(async () => {
+        const exists = tasks.some((item) => item.id === task.id)
+        const saved = await request<Task>(exists ? `/tasks/${task.id}` : '/tasks', {
+          method: exists ? 'PUT' : 'POST', body: JSON.stringify({ ...task, workspaceId: task.workspaceId ?? workspaceId }),
+        })
+        setTasks((current) => exists ? current.map((item) => item.id === saved.id ? saved : item) : [saved, ...current])
+      }),
+      deleteTask: async (id) => perform(async () => {
+        await request(`/tasks/${id}`, { method: 'DELETE' })
+        setTasks((current) => current.filter((task) => task.id !== id))
+      }),
+      moveTask: async (id, status) => perform(async () => {
+        const saved = await request<Task>(`/tasks/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) })
+        setTasks((current) => current.map((task) => task.id === id ? saved : task))
+      }),
     }
-  }, [reportError]);
-
-  const moveTask = useCallback(async (id: string, status: Task['status']) => {
-    try {
-      const saved = await taskApi.move(id, status);
-      setTasks((current) => current.map((task) => task.id === id ? saved : task));
-      setError(null);
-    } catch (reason) {
-      throw reportError(reason);
-    }
-  }, [reportError]);
-
-  const value = useMemo<TaskStoreValue>(() => ({
-    tasks,
-    isLoading,
-    error,
-    clearError: () => setError(null),
-    saveTask,
-    deleteTask,
-    moveTask,
-  }), [deleteTask, error, isLoading, moveTask, saveTask, tasks]);
-  return <TaskStore.Provider value={value}>{children}</TaskStore.Provider>;
+  }, [tasks, workspaceId, error, isLoading])
+  return <TaskStore.Provider value={value}>{children}</TaskStore.Provider>
 }

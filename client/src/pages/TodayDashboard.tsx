@@ -1,49 +1,403 @@
 import { useMemo, useState } from 'react';
-import { CheckCircle2, ChevronRight, CircleAlert, Clock3, Plus, Search, SlidersHorizontal } from 'lucide-react';
+import {
+  CheckCircle2,
+  ChevronRight,
+  CircleAlert,
+  Clock3,
+  Plus,
+  Search,
+  SlidersHorizontal,
+} from 'lucide-react';
 import { useParams } from 'react-router-dom';
+
 import { TaskCard } from '../components/TaskCard';
 import { TaskModal } from '../components/TaskModal';
 import { useTasks } from '../taskStoreContext';
 import type { Task } from '../types';
-import { useUserProfile } from '../userProfileContext';
 
-const dayStart = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+const dayStart = (date: Date) =>
+  new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate()
+  ).getTime();
 
 export function TodayDashboard() {
   const { workspaceId = 'web-dev' } = useParams();
+
   const { tasks } = useTasks();
-  const { profile } = useUserProfile();
+
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('all');
   const [priority, setPriority] = useState('all');
-  const [modalTask, setModalTask] = useState<Task | null | undefined>(undefined);
-  const workspaceTasks = tasks.filter((task) => task.workspaceId === workspaceId);
-  const filtered = useMemo(() => workspaceTasks.filter((task) => task.title.toLowerCase().includes(query.toLowerCase()) && (status === 'all' || task.status === status) && (priority === 'all' || task.priority === priority)), [workspaceTasks, query, status, priority]);
+  const [modalTask, setModalTask] =
+    useState<Task | null | undefined>(undefined);
+
+  const identity = workspaceId
+    ? localStorage.getItem(
+        `memberIdentity:${workspaceId}`
+      )
+    : null;
+
+  let memberName = 'Workspace Member';
+
+  if (identity) {
+    try {
+      const parsedIdentity = JSON.parse(identity);
+
+      if (parsedIdentity.name) {
+        memberName = parsedIdentity.name;
+      }
+    } catch {
+      memberName = 'Workspace Member';
+    }
+  }
+
+  const workspaceTasks = tasks.filter(
+    (task) =>
+      task.workspaceId === workspaceId
+  );
+
+  const filtered = useMemo(
+    () =>
+      workspaceTasks.filter(
+        (task) =>
+          task.title
+            .toLowerCase()
+            .includes(query.toLowerCase()) &&
+          (status === 'all' ||
+            task.status === status) &&
+          (priority === 'all' ||
+            task.priority === priority)
+      ),
+    [
+      workspaceTasks,
+      query,
+      status,
+      priority,
+    ]
+  );
+
   const today = dayStart(new Date());
   const week = today + 7 * 86400000;
-  const overdue = filtered.filter((task) => dayStart(new Date(task.dueDate)) < today && task.status !== 'done');
-  const dueToday = filtered.filter((task) => dayStart(new Date(task.dueDate)) === today);
-  const thisWeek = filtered.filter((task) => { const date = dayStart(new Date(task.dueDate)); return date > today && date < week; });
-  const completed = workspaceTasks.filter((task) => task.status === 'done').length;
-  const completion = workspaceTasks.length ? Math.round(completed / workspaceTasks.length * 100) : 0;
-  const todayLabel = new Intl.DateTimeFormat('en', { weekday: 'long', month: 'long', day: 'numeric' }).format(new Date()).toUpperCase();
 
-  return <div className="page">
-    <div className="page-heading"><div><p>{todayLabel}</p><h1>Today Dashboard</h1><span>Welcome back, {profile.name}. Here’s what needs your attention.</span></div><button className="primary" onClick={() => setModalTask(null)}><Plus /> New task</button></div>
-    <section className="stats-grid" aria-label="Task summary">
-      <article><span className="stat-icon navy"><Clock3 /></span><div><small>TOTAL TASKS</small><strong>{workspaceTasks.length}</strong><p>In this workspace</p></div></article>
-      <article><span className="stat-icon green"><CheckCircle2 /></span><div><small>COMPLETED</small><strong>{completed}</strong><p>{completion}% this week</p></div></article>
-      <article><span className="stat-icon coral"><CircleAlert /></span><div><small>OVERDUE</small><strong>{workspaceTasks.filter((task) => dayStart(new Date(task.dueDate)) < today && task.status !== 'done').length}</strong><p>Needs attention</p></div></article>
-      <article className="progress-card"><div><small>THIS WEEK</small><strong>{completion}%</strong><p>Weekly progress</p></div><div className="progress-ring" style={{ '--progress': `${completion * 3.6}deg` } as React.CSSProperties}><span>{completion}%</span></div></article>
-    </section>
-    <section className="filters" aria-label="Task filters"><div className="search"><Search /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search tasks..." aria-label="Search tasks" /></div><span className="filter-label"><SlidersHorizontal /> Filter</span><select value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Filter by status"><option value="all">All statuses</option><option value="todo">To do</option><option value="in-progress">In progress</option><option value="done">Done</option></select><select value={priority} onChange={(e) => setPriority(e.target.value)} aria-label="Filter by priority"><option value="all">All priorities</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></section>
-    <TaskGroup title="Overdue" tone="coral" tasks={overdue} onOpen={setModalTask} />
-    <TaskGroup title="Today" tone="yellow" tasks={dueToday} onOpen={setModalTask} />
-    <TaskGroup title="This week" tone="blue" tasks={thisWeek} onOpen={setModalTask} />
-    {modalTask !== undefined ? <TaskModal task={modalTask ?? undefined} workspaceId={workspaceId} onClose={() => setModalTask(undefined)} /> : null}
-  </div>;
+  const overdue = filtered.filter(
+    (task) =>
+      dayStart(new Date(task.dueDate)) <
+        today &&
+      task.status !== 'done'
+  );
+
+  const dueToday = filtered.filter(
+    (task) =>
+      dayStart(new Date(task.dueDate)) ===
+      today
+  );
+
+  const thisWeek = filtered.filter(
+    (task) => {
+      const date = dayStart(
+        new Date(task.dueDate)
+      );
+
+      return (
+        date > today &&
+        date < week
+      );
+    }
+  );
+
+  const completed = workspaceTasks.filter(
+    (task) => task.status === 'done'
+  ).length;
+
+  const completion = workspaceTasks.length
+    ? Math.round(
+        (completed /
+          workspaceTasks.length) *
+          100
+      )
+    : 0;
+
+  const todayLabel =
+    new Intl.DateTimeFormat('en', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+    })
+      .format(new Date())
+      .toUpperCase();
+
+  return (
+    <div className="page">
+      <div className="page-heading">
+        <div>
+          <p>{todayLabel}</p>
+
+          <h1>Today Dashboard</h1>
+
+          <span>
+            Welcome back, {memberName}. Here’s what needs your attention.
+          </span>
+        </div>
+
+        <button
+          className="primary"
+          onClick={() =>
+            setModalTask(null)
+          }
+        >
+          <Plus />
+          New task
+        </button>
+      </div>
+
+      <section
+        className="stats-grid"
+        aria-label="Task summary"
+      >
+        <article>
+          <span className="stat-icon navy">
+            <Clock3 />
+          </span>
+
+          <div>
+            <small>TOTAL TASKS</small>
+            <strong>
+              {workspaceTasks.length}
+            </strong>
+            <p>In this workspace</p>
+          </div>
+        </article>
+
+        <article>
+          <span className="stat-icon green">
+            <CheckCircle2 />
+          </span>
+
+          <div>
+            <small>COMPLETED</small>
+            <strong>{completed}</strong>
+            <p>{completion}% this week</p>
+          </div>
+        </article>
+
+        <article>
+          <span className="stat-icon coral">
+            <CircleAlert />
+          </span>
+
+          <div>
+            <small>OVERDUE</small>
+
+            <strong>
+              {
+                workspaceTasks.filter(
+                  (task) =>
+                    dayStart(
+                      new Date(
+                        task.dueDate
+                      )
+                    ) < today &&
+                    task.status !==
+                      'done'
+                ).length
+              }
+            </strong>
+
+            <p>Needs attention</p>
+          </div>
+        </article>
+
+        <article className="progress-card">
+          <div>
+            <small>THIS WEEK</small>
+            <strong>
+              {completion}%
+            </strong>
+            <p>Weekly progress</p>
+          </div>
+
+          <div
+            className="progress-ring"
+            style={
+              {
+                '--progress': `${completion * 3.6}deg`,
+              } as React.CSSProperties
+            }
+          >
+            <span>
+              {completion}%
+            </span>
+          </div>
+        </article>
+      </section>
+
+      <section
+        className="filters"
+        aria-label="Task filters"
+      >
+        <div className="search">
+          <Search />
+
+          <input
+            value={query}
+            onChange={(e) =>
+              setQuery(e.target.value)
+            }
+            placeholder="Search tasks..."
+            aria-label="Search tasks"
+          />
+        </div>
+
+        <span className="filter-label">
+          <SlidersHorizontal />
+          Filter
+        </span>
+
+        <select
+          value={status}
+          onChange={(e) =>
+            setStatus(e.target.value)
+          }
+          aria-label="Filter by status"
+        >
+          <option value="all">
+            All statuses
+          </option>
+
+          <option value="todo">
+            To do
+          </option>
+
+          <option value="in-progress">
+            In progress
+          </option>
+
+          <option value="done">
+            Done
+          </option>
+        </select>
+
+        <select
+          value={priority}
+          onChange={(e) =>
+            setPriority(
+              e.target.value
+            )
+          }
+          aria-label="Filter by priority"
+        >
+          <option value="all">
+            All priorities
+          </option>
+
+          <option value="high">
+            High
+          </option>
+
+          <option value="medium">
+            Medium
+          </option>
+
+          <option value="low">
+            Low
+          </option>
+        </select>
+      </section>
+
+      <TaskGroup
+        title="Overdue"
+        tone="coral"
+        tasks={overdue}
+        onOpen={setModalTask}
+      />
+
+      <TaskGroup
+        title="Today"
+        tone="yellow"
+        tasks={dueToday}
+        onOpen={setModalTask}
+      />
+
+      <TaskGroup
+        title="This week"
+        tone="blue"
+        tasks={thisWeek}
+        onOpen={setModalTask}
+      />
+
+      {modalTask !== undefined ? (
+        <TaskModal
+          task={
+            modalTask ??
+            undefined
+          }
+          workspaceId={
+            workspaceId
+          }
+          onClose={() =>
+            setModalTask(
+              undefined
+            )
+          }
+        />
+      ) : null}
+    </div>
+  );
 }
 
-function TaskGroup({ title, tone, tasks, onOpen }: { title: string; tone: string; tasks: Task[]; onOpen: (task: Task) => void }) {
-  return <section className="task-group"><div className="group-heading"><div><span className={`group-dot ${tone}`} /><h2>{title}</h2><small>{tasks.length}</small></div><button>View all <ChevronRight /></button></div>{tasks.length ? <div className="task-list">{tasks.map((task) => <TaskCard task={task} onOpen={onOpen} key={task.id} />)}</div> : <div className="empty-state"><CheckCircle2 /><p>Nothing here — you’re all caught up.</p></div>}</section>;
+function TaskGroup({
+  title,
+  tone,
+  tasks,
+  onOpen,
+}: {
+  title: string;
+  tone: string;
+  tasks: Task[];
+  onOpen: (task: Task) => void;
+}) {
+  return (
+    <section className="task-group">
+      <div className="group-heading">
+        <div>
+          <span
+            className={`group-dot ${tone}`}
+          />
+
+          <h2>{title}</h2>
+
+          <small>
+            {tasks.length}
+          </small>
+        </div>
+
+        <button>
+          View all
+          <ChevronRight />
+        </button>
+      </div>
+
+      {tasks.length ? (
+        <div className="task-list">
+          {tasks.map((task) => (
+            <TaskCard
+              task={task}
+              onOpen={onOpen}
+              key={task.id}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="empty-state">
+          <CheckCircle2 />
+
+          <p>
+            Nothing here — you’re all caught up.
+          </p>
+        </div>
+      )}
+    </section>
+  );
 }

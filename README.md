@@ -1,79 +1,50 @@
 # NEO To-do App
 
-A collaborative task-management app for creating, assigning, filtering, and tracking work through a Today dashboard and weekly sprint board.
+React/TypeScript frontend with a shared Express/Mongoose backend for workspaces and tasks.
 
-## Project structure
+## Local development
 
-- `client/` - React, TypeScript, and Vite frontend
-- `server/` - Express, TypeScript, MongoDB, and Mongoose API
+Requires Node.js 20.19 or newer and npm.
 
-## Requirements
-
-- Node.js 20.19 or newer
-- npm
-- MongoDB running locally, or a MongoDB Atlas connection string
-
-## Backend setup
-
+Start the backend:
 ```bash
 cd server
 npm install
-cp .env.example .env
 npm run dev
 ```
 
-Set `MONGODB_URI` in `server/.env` to use MongoDB Atlas or another external database. Never commit the `.env` file. During local development, the server automatically starts a local MongoDB database in `server/.mongodb-data` when `MONGODB_URI` is not set.
+The API listens on port 5001. When MONGODB_URI is absent, a local MongoDB instance starts automatically and stores development data in server/.mongodb-data (ignored by Git). The first run may download MongoDB. For Atlas or an existing database, copy server/.env.example to server/.env and set MONGODB_URI. Production requires MONGODB_URI and NODE_ENV=production.
 
-The API runs at `http://localhost:4000` by default. Check it with:
-
-```bash
-curl http://localhost:4000/api/health
-```
-
-## Frontend setup
-
-In a second terminal:
-
+In another terminal:
 ```bash
 cd client
 npm install
 npm run dev
 ```
 
-Vite proxies `/api` requests to `http://localhost:4000`, so the frontend and backend can be developed together without putting database credentials in the browser.
+Open the displayed frontend URL. Create or join a workspace with your name. The app uses that workspace's actual member IDs and entered names for profiles and task assignees. Routes are /workspace/:workspaceId/app/home, /today, and /board.
 
-## API endpoints
+VITE_API_URL is the server origin (for example http://localhost:5001), without /api. PORT controls the server port. Never commit .env or database files.
 
-### Tasks
+## API
 
-- `GET /api/tasks?workspaceId=web-dev` - list tasks
-- `GET /api/tasks/:id` - read a task
-- `POST /api/tasks` - create a task
-- `PUT /api/tasks/:id` - replace a task
-- `PATCH /api/tasks/:id` - update fields such as status
-- `DELETE /api/tasks/:id` - delete a task
+- POST /api/workspaces — create a workspace and its creator
+- GET /api/workspaces/:workspaceId — workspace details and joined members
+- POST /api/workspaces/:workspaceId/members — join/add a member
+- GET /api/tasks?workspaceId=... — list tasks
+- POST /api/tasks — create a task
+- PUT /api/tasks/:taskId — edit a task
+- PATCH /api/tasks/:taskId/status — move a task
+- DELETE /api/tasks/:taskId — delete a task
 
-Task lists support `q`, `status`, `priority`, and `sort=dueDate|newest|title` query parameters.
+The task model and IDs follow the shared backend already merged into main. Task failures keep the form open and show an error.
 
-### Team members
-
-- `GET /api/members?workspaceId=web-dev` - list members
-- `POST /api/members` - create a member
-- `PUT /api/members/:id` - replace a member
-- `DELETE /api/members/:id` - delete a member
-
-## Validation
+## Verification
 
 ```bash
-cd server && npm run build
-cd ../client && npm run build && npm run lint
+cd client
+npm run build
+npm run lint
+cd ../server
+node --check server.js
 ```
-
-## Environment variables
-
-| Variable | Location | Purpose |
-| --- | --- | --- |
-| `MONGODB_URI` | `server/.env` | MongoDB connection string |
-| `PORT` | `server/.env` | API port; defaults to `4000` |
-| `CLIENT_ORIGIN` | `server/.env` | Allowed frontend origin for direct API calls |
-| `VITE_API_URL` | `client/.env` | Optional API base override; defaults to `/api` |
