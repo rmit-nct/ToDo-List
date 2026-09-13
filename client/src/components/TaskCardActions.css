@@ -1,0 +1,34 @@
+.task-quick-actions {
+  position: fixed;
+  z-index: 100;
+  width: 210px;
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid #c5d5e7;
+  border-radius: 10px;
+  background: #fff;
+  color: #202946;
+  box-shadow: 0 8px 28px #10182a26;
+}
+.task-quick-actions button {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 6px;
+  padding: 9px 12px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font-size: 12px;
+  cursor: pointer;
+}
+.task-quick-actions button:hover, .task-quick-actions button:focus-visible { background: #e3edf9; }
+.task-quick-actions button:disabled { opacity: .55; cursor: wait; }
+.task-quick-actions span { display: block; padding: 6px 12px; font-size: 11px; }
+.task-quick-actions__label { opacity: .7; border-top: 1px solid #c5d5e7; margin-top: 3px; }
+.task-quick-actions .task-quick-actions__delete { color: #b33f36; border-top: 1px solid #c5d5e7; margin-top: 4px; }
+.task-quick-actions--dark { background: #211f2e; border-color: #444456; color: #f2f7fc; }
+.task-quick-actions--dark button:hover, .task-quick-actions--dark button:focus-visible { background: #343344; }
+.task-quick-actions--dark .task-quick-actions__delete { color: #ffaaa0; border-color: #444456; }
+.task-quick-actions--dark .task-quick-actions__label { border-color: #444456; }

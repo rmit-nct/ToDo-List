@@ -359,27 +359,6 @@ function HomePage() {
         </ul>
       )}
 
-      <h2>Team Members</h2>
-
-      {members.length === 0 ? (
-        <p className="status-message">
-          No members yet.
-        </p>
-      ) : (
-        <ul className="member-list">
-          {members.map(
-            (member) => (
-              <li key={member.id}>
-                {member.name}
-                {member.email
-                  ? ` — ${member.email}`
-                  : ""}
-              </li>
-            )
-          )}
-        </ul>
-      )}
-
       <form
         className="member-form"
         onSubmit={handleAddMember}
