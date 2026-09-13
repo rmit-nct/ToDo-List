@@ -4,11 +4,13 @@ import { z } from 'zod'
 import { signUpSchema } from '../schemas/authSchema'
 import FormError from './FormError'
 import { useNavigate } from 'react-router-dom'
+import { useUserProfile } from '../userProfileContext'
 
 type SignUpFormData = z.infer<typeof signUpSchema>
 
 function SignUpForm() {
   const navigate = useNavigate()
+  const { setProfile } = useUserProfile()
   const {
     register,
     handleSubmit,
@@ -17,7 +19,8 @@ function SignUpForm() {
     resolver: zodResolver(signUpSchema),
   })
 
-  const onSubmit = (_data: SignUpFormData) => {
+  const onSubmit = (data: SignUpFormData) => {
+    setProfile({ name: data.name, email: data.email })
     navigate('/workspace/web-dev/today')
   }
 
@@ -26,7 +29,8 @@ function SignUpForm() {
       <label>
         Full Name
         <input
-          placeholder="My Ngoc"
+          autoComplete="name"
+          placeholder="Enter your name"
           type="text"
           {...register('name')}
         />
@@ -37,6 +41,7 @@ function SignUpForm() {
       <label>
         Email
         <input
+          autoComplete="email"
           placeholder="aria@example.com"
           type="email"
           {...register('email')}
@@ -48,6 +53,7 @@ function SignUpForm() {
       <label>
         Password
         <input
+          autoComplete="new-password"
           placeholder="At least 8 characters"
           type="password"
           {...register('password')}
@@ -59,6 +65,7 @@ function SignUpForm() {
       <label>
         Confirm Password
         <input
+          autoComplete="new-password"
           placeholder="Repeat password"
           type="password"
           {...register('confirmPassword')}

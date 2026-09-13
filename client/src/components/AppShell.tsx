@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from 'react';
-import { CalendarDays, ChevronDown, CircleHelp, Home, LayoutDashboard, Menu, Moon, Settings, Sun, UserRoundCheck, X } from 'lucide-react';
+import { CalendarDays, ChevronDown, Home, LayoutDashboard, Menu, Moon, Settings, Sun, UserRoundCheck, X } from 'lucide-react';
 import { NavLink, useParams } from 'react-router-dom';
-import { members } from '../data';
+import { useTasks } from '../taskStoreContext';
+import { useUserProfile } from '../userProfileContext';
 import { BrandLogo } from './BrandLogo';
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -9,6 +10,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [dark, setDark] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [workspaceOpen, setWorkspaceOpen] = useState(true);
+  const { error, isLoading, clearError } = useTasks();
+  const { profile, currentMember } = useUserProfile();
 
   const nav = (
     <>
@@ -27,8 +30,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </nav>
       <div className="sidebar-footer">
         <span className="future-nav"><Settings /> Settings</span>
-        <button><CircleHelp /> Help & support</button>
-        <div className="profile"><span className="avatar" data-member={members[0].id}>MN</span><div><strong>My Ngoc</strong><small>myngoc@neo.app</small></div><ChevronDown /></div>
+        <div className="profile"><span className="avatar" data-member={currentMember.id}>{currentMember.initials}</span><div><strong>{profile.name}</strong><small>{profile.email || 'Workspace member'}</small></div><ChevronDown /></div>
       </div>
     </>
   );
@@ -39,6 +41,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     <main className="main">
       <header className="mobile-header"><button aria-label="Open menu" onClick={() => setMenuOpen(true)}>{menuOpen ? <X /> : <Menu />}</button><BrandLogo compact /><button aria-label="Toggle color theme" onClick={() => setDark((v) => !v)}>{dark ? <Sun /> : <Moon />}</button></header>
       <button className="theme-toggle" onClick={() => setDark((v) => !v)}>{dark ? <Sun /> : <Moon />} {dark ? 'Light' : 'Dark'}</button>
+      {isLoading ? <div className="api-status" role="status">Loading tasks...</div> : null}
+      {error ? <div className="api-status api-status-error" role="alert"><span>{error}</span><button onClick={clearError} aria-label="Dismiss message">×</button></div> : null}
       {children}
     </main>
   </div>;

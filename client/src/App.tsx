@@ -4,6 +4,7 @@ import { AppShell } from './components/AppShell'
 import { TodayDashboard } from './pages/TodayDashboard'
 import { SprintBoard } from './pages/SprintBoard'
 import { TaskStoreProvider } from './taskStore'
+import { UserProfileProvider } from './UserProfileProvider'
 import './assets/app.css'
 
 function WorkspaceApp() {
@@ -22,12 +23,14 @@ function WorkspaceApp() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<AuthPage />} />
-        <Route path="/workspace/:workspaceId/*" element={<WorkspaceApp />} />
-      </Routes>
-    </BrowserRouter>
+    <UserProfileProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<AuthPage />} />
+          <Route path="/workspace/:workspaceId/*" element={<WorkspaceApp />} />
+        </Routes>
+      </BrowserRouter>
+    </UserProfileProvider>
   )
 }
 

@@ -5,12 +5,14 @@ import { TaskCard } from '../components/TaskCard';
 import { TaskModal } from '../components/TaskModal';
 import { useTasks } from '../taskStoreContext';
 import type { Task } from '../types';
+import { useUserProfile } from '../userProfileContext';
 
 const dayStart = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
 
 export function TodayDashboard() {
   const { workspaceId = 'web-dev' } = useParams();
   const { tasks } = useTasks();
+  const { profile } = useUserProfile();
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('all');
   const [priority, setPriority] = useState('all');
@@ -27,7 +29,7 @@ export function TodayDashboard() {
   const todayLabel = new Intl.DateTimeFormat('en', { weekday: 'long', month: 'long', day: 'numeric' }).format(new Date()).toUpperCase();
 
   return <div className="page">
-    <div className="page-heading"><div><p>{todayLabel}</p><h1>Today Dashboard</h1><span>Welcome back, My Ngoc. Here’s what needs your attention.</span></div><button className="primary" onClick={() => setModalTask(null)}><Plus /> New task</button></div>
+    <div className="page-heading"><div><p>{todayLabel}</p><h1>Today Dashboard</h1><span>Welcome back, {profile.name}. Here’s what needs your attention.</span></div><button className="primary" onClick={() => setModalTask(null)}><Plus /> New task</button></div>
     <section className="stats-grid" aria-label="Task summary">
       <article><span className="stat-icon navy"><Clock3 /></span><div><small>TOTAL TASKS</small><strong>{workspaceTasks.length}</strong><p>In this workspace</p></div></article>
       <article><span className="stat-icon green"><CheckCircle2 /></span><div><small>COMPLETED</small><strong>{completed}</strong><p>{completion}% this week</p></div></article>

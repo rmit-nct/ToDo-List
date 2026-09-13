@@ -3,9 +3,12 @@ import type { Task } from './types'
 
 export interface TaskStoreValue {
   tasks: Task[]
-  saveTask: (task: Task) => void
-  deleteTask: (id: string) => void
-  moveTask: (id: string, status: Task['status']) => void
+  isLoading: boolean
+  error: string | null
+  clearError: () => void
+  saveTask: (task: Task, isNew: boolean) => Promise<void>
+  deleteTask: (id: string) => Promise<void>
+  moveTask: (id: string, status: Task['status']) => Promise<void>
 }
 
 export const TaskStore = createContext<TaskStoreValue | null>(null)
