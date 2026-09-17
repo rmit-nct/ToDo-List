@@ -4,14 +4,36 @@ import { randomBytes } from "node:crypto";
 const db = await MongoMemoryServer.create({
   instance: { dbName: "nct-isolated-qa" },
 });
+const worker = process.env.QA_CLOUDFLARE === "1";
+const varsPath = new URL("../.dev.vars", import.meta.url);
+if (worker) {
+  const { writeFile } = await import("node:fs/promises");
+  await writeFile(
+    varsPath,
+    `MONGODB_URI=${db.getUri()}
+MONGODB_DB=nct-isolated-qa
+NEXTAUTH_SECRET=${randomBytes(32).toString("hex")}
+NEXTAUTH_URL=http://localhost:3100
+`,
+    { mode: 0o600, flag: "wx" },
+  );
+}
 const child = spawn(
   process.execPath,
-  [
-    "node_modules/next/dist/bin/next",
-    process.env.QA_PRODUCTION ? "start" : "dev",
-    "-p",
-    "3100",
-  ],
+  worker
+    ? [
+        "node_modules/wrangler/bin/wrangler.js",
+        "dev",
+        "--port",
+        "3100",
+        "--local",
+      ]
+    : [
+        "node_modules/next/dist/bin/next",
+        process.env.QA_PRODUCTION ? "start" : "dev",
+        "-p",
+        "3100",
+      ],
   {
     stdio: "inherit",
     env: {
@@ -23,14 +45,22 @@ const child = spawn(
     },
   },
 );
+async function cleanup() {
+  if (worker) {
+    const { unlink } = await import("node:fs/promises");
+    await unlink(varsPath).catch(() => {});
+  }
+}
 async function stop() {
   child.kill("SIGTERM");
   await db.stop();
+  await cleanup();
   process.exit();
 }
 process.on("SIGINT", stop);
 process.on("SIGTERM", stop);
 child.on("exit", async (code) => {
   await db.stop();
+  await cleanup();
   process.exit(code ?? 1);
 });

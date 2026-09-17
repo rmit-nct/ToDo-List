@@ -17,7 +17,8 @@ export const authOptions: NextAuthOptions = {
         if (!parsed.success) return null;
         const username = parsed.data;
         const ip = String(
-          request.headers?.["x-vercel-forwarded-for"] ||
+          request.headers?.["cf-connecting-ip"] ||
+            request.headers?.["x-vercel-forwarded-for"] ||
             request.headers?.["x-forwarded-for"] ||
             "local",
         ).split(",")[0];

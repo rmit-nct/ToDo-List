@@ -4,7 +4,7 @@ A team task workspace with Today, a sprint board, searchable overview, My Tasks,
 
 ## Stack and structure
 
-Next.js 16 serves the React interface and backend from one origin. NextAuth.js manages encrypted HTTP-only JWT sessions; accounts, workspace memberships, invitations, preferences, and tasks persist in MongoDB through a pooled Mongoose connection.
+Next.js 16 serves the React interface and backend from one origin. NextAuth.js manages encrypted HTTP-only JWT sessions; accounts, workspace memberships, invitations, preferences, and tasks persist in MongoDB through a request-scoped MongoDB driver connections.
 
 - `app/`: Next.js entrypoints and API routes.
 - `backend/`: authentication, validation, database access, and authorization.
@@ -78,17 +78,31 @@ node scripts/browser-qa.mjs
 
 Browser QA uses an isolated, headless Google Chrome profile. Screenshots go to `/tmp/nct-qa`. To test the production build locally, build first and set `QA_PRODUCTION=1` when starting the test server. Integration/browser test accounts only belong in disposable QA databases. Do not point these scripts at production.
 
-## Deployment
+## Cloudflare deployment
 
-Deploy the repository root as a Next.js project in Vercel's **Tuturuuu** team (`nct-todo`), with the app in Singapore (`sin1`). Create the production cluster directly in MongoDB Atlas and a database user limited to this app's database. Configure Atlas network access for the deployment's egress; dynamic Vercel egress may require a broad Atlas network rule unless fixed egress is configured. Database authentication remains mandatory.
+The app uses OpenNext on Cloudflare Workers in the **Tuturuuu** account. Deploy only the `ngoc/production-nextauth` branch; do not merge or change `main` as part of deployment.
 
-Set private Vercel production environment variables:
+```sh
+npm run build:cloudflare
+npm run deploy:cloudflare
+```
 
-- `MONGODB_URI`: Atlas driver connection string with the dedicated database user.
-- `MONGODB_DB`: dedicated production database name.
-- `NEXTAUTH_SECRET`: unique, random server secret.
-- `NEXTAUTH_URL`: canonical production HTTPS URL.
+`wrangler.jsonc` scopes deployment to the `nct-planner` Worker. Set `NEXTAUTH_URL` to the canonical HTTPS address in its vars. Store `MONGODB_URI` and a random `NEXTAUTH_SECRET` with `wrangler secret put` or `wrangler secret bulk` using private input; never commit them. `MONGODB_DB` points to `nct-todo-production`. The dedicated Atlas account has readWrite privileges only on this database. Existing Vercel credentials and data remain untouched.
 
-Keep preview databases separate from production. Never expose these values using `NEXT_PUBLIC_` variables. After deployment verify account creation/sign-in, workspace invitation, task persistence, theme settings, authorization, logs, and the canonical domain. A successful build alone does not prove the database is connected.
+MongoDB connections are shared only within one request using AsyncLocalStorage and closed afterward. This avoids sharing Worker sockets across requests. Driver loading occurs inside the request to keep initialization compatible with Workers. Node.js compatibility is enabled. Authenticated API responses are dynamic and never stored in a shared cache.
+
+To exercise the production Worker bundle against disposable MongoDB locally:
+
+```sh
+npm run build:cloudflare
+QA_CLOUDFLARE=1 node scripts/test-server.mjs
+# In another terminal:
+npm test
+node scripts/browser-qa.mjs
+```
+
+The test runner temporarily creates an ignored `.dev.vars` file and removes it on shutdown; it refuses to overwrite an existing file. CI runs the API integration suite against this runtime. Live verification must use uniquely named disposable profiles/workspaces and remove only that test data afterward.
+
+Cloudflare and the previous Vercel deployment share the Atlas database, but use different authentication secrets, so users sign in again on the new domain. The previous Vercel deployment remains available; new changes are released only to Cloudflare.
 
 GitHub operations must use **myngoc0703**, with `ngoc/` feature branches. See `AGENTS.md`.

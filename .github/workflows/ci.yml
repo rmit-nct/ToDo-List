@@ -16,10 +16,10 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
-      - run: npm run build
+      - run: npm run build:cloudflare
       - name: Isolated MongoDB integration tests
         run: |
-          QA_PRODUCTION=1 node scripts/test-server.mjs > /tmp/nct-test-server.log 2>&1 &
+          QA_CLOUDFLARE=1 node scripts/test-server.mjs > /tmp/nct-test-server.log 2>&1 &
           SERVER_PID=$!
           trap 'kill "$SERVER_PID" || true' EXIT
           for attempt in $(seq 1 60); do

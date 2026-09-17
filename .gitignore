@@ -8,3 +8,7 @@ node_modules/
 playwright-report/
 test-results/
 .mongodb-data/
+
+.open-next/
+.wrangler/
+.dev.vars*

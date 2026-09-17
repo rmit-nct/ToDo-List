@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nct-planner",
+  "account_id": "e8912e2867beecc673d171907bf09649",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-09-17",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "services": [
+    { "binding": "WORKER_SELF_REFERENCE", "service": "nct-planner" },
+  ],
+  "observability": { "enabled": true },
+  "placement": { "mode": "smart" },
+  "vars": { "MONGODB_DB": "nct-todo-production" },
+}

@@ -54,7 +54,8 @@ export async function handle(request: Request, path: string[]) {
       .parse(await readJson(request));
     await rateLimit(
       "register",
-      request.headers.get("x-vercel-forwarded-for") ||
+      request.headers.get("cf-connecting-ip") ||
+        request.headers.get("x-vercel-forwarded-for") ||
         request.headers.get("x-forwarded-for")?.split(",")[0] ||
         "local",
       10,

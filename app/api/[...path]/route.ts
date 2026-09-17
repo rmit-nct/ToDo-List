@@ -1,3 +1,4 @@
+import { withDatabase } from "../../../backend/db";
 import { handle } from "../../../backend/service";
 import { HttpError } from "../../../backend/security";
 import { ZodError } from "zod";
@@ -8,7 +9,8 @@ async function route(
   context: { params: Promise<{ path: string[] }> },
 ) {
   try {
-    const result = await handle(request, (await context.params).path);
+    const path = (await context.params).path;
+    const result = await withDatabase(() => handle(request, path));
     return Response.json(result, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     if (error instanceof HttpError)
