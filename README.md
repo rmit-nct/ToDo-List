@@ -25,20 +25,19 @@ npm run dev
 
 Configure `MONGODB_URI`, `MONGODB_DB`, `NEXTAUTH_URL`, and a randomly generated `NEXTAUTH_SECRET` in `.env.local`. Generate a secret with `openssl rand -base64 32`; keep it private. Use a local MongoDB installation or a dedicated Atlas development database. Production never starts an ephemeral database or falls back to mock data.
 
-Visit http://localhost:3000, create an account, save the one-time recovery key in a password manager, and sign in. Create a workspace or join through an owner's invite link. Signing in from another device restores workspace access and preferences.
+Visit http://localhost:3000, enter a username, then select, create, or join a workspace. No password, email, signup form, or recovery key is required. Usernames are 3–32 ASCII letters, numbers, dots, underscores, or hyphens; case and surrounding whitespace are normalized. A profile is created on first use and restored when the same username is entered on another device.
 
-## Accounts and permissions
+## Shared username access
 
-- Passwords use bcrypt (cost 12); validation enforces at least 12 characters and a maximum of 72 UTF-8 bytes.
-- Each workspace is private to its members. Task assignments must reference actual members; identity and task creator are derived on the server.
-- Members can create, edit, move, and delete workspace tasks. Deletion requires UI confirmation.
-- Only the workspace owner can rename the workspace or retrieve/replace its invite link.
-- Invitations are unguessable bearer links. Share privately. Replacing a link immediately invalidates the old link.
-- Registration, sign-in, recovery, and task writes have database-backed rate limits. Mutation endpoints validate request origin and JSON input.
-- Password changes and recovery invalidate existing sessions. Recovery uses the one-time key saved at signup and issues a new key. No email delivery provider is required; email addresses are login identifiers and are not verified.
-- Theme and display-name settings persist in the account. No demo accounts or members are inserted.
+This is a trusted-team identity picker, not proof of identity. **Anyone who knows a username can use its profile and its workspaces**, including owner actions. Do not use this mode for confidential data. NextAuth still maintains the browser session; membership checks prevent one profile from accessing another profile's workspaces, but usernames themselves are not secrets.
 
-Legacy name-only workspace identities are not accounts. This release uses a dedicated database and does not silently claim or import legacy records. Existing data must be reviewed and ownership mapped before a separate migration.
+- Workspace selection lists the current profile's memberships. New profiles create a workspace or join with an invite.
+- Members can create, edit, move, and delete workspace tasks. Only the owner profile can rename a workspace or replace an invite.
+- Profile names and themes persist. Changing a display name does not change the login username.
+- Sign-in and writes are rate limited; mutation endpoints validate origin and input.
+- Existing email/password records and their memberships are preserved and are never claimed by matching a display name. They do not appear in the username login flow. The legacy registration/recovery APIs remain for compatibility; ownership migration must be explicit.
+
+Calendar deadlines, team workload, search, deadline/status/priority filters, and CSV export use real workspace tasks. CSV export includes only the filtered tasks and neutralizes spreadsheet formulas.
 
 ## API
 
@@ -46,9 +45,9 @@ NextAuth endpoints are under `/api/auth/*`.
 
 | Endpoint                         | Purpose                                             |
 | -------------------------------- | --------------------------------------------------- |
-| `POST /api/register`             | Create account and issue recovery key               |
-| `POST /api/recover`              | Reset password using recovery key                   |
-| `GET/PATCH /api/account`         | Read/update profile, theme, password                |
+| `POST /api/register`             | Legacy account registration               |
+| `POST /api/recover`              | Legacy account recovery                   |
+| `GET/PATCH /api/account`         | Read/update profile and theme (passwords only for legacy records)                |
 | `GET/POST /api/workspaces`       | List own workspaces / create workspace              |
 | `POST /api/workspaces/join`      | Join using invite code                              |
 | `GET/PATCH /api/workspaces/:id`  | Read authorized workspace / owner settings          |

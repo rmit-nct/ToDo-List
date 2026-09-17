@@ -25,23 +25,23 @@ async function json(
   );
   return body;
 }
-async function login(c: APIRequestContext, email: string, pw = password) {
+async function login(c: APIRequestContext, username: string) {
   const { csrfToken } = await json(c, "/auth/csrf");
   const response = await c.post("/api/auth/callback/credentials", {
-    form: { csrfToken, email, password: pw, json: "true", callbackUrl: base },
+    form: { csrfToken, username, json: "true", callbackUrl: base },
   });
   assert.equal(response.status(), 200, await response.text());
   const session = await json(c, "/auth/session");
   assert.ok(session.user?.id, "Session must contain persisted user");
   return session.user;
 }
-test("accounts, session revocation, workspace isolation and persistent task lifecycle", async () => {
+test("username profiles, workspace isolation and persistent task lifecycle", async () => {
   const anonymous = await client(),
     owner = await client(),
     member = await client();
   const suffix = Date.now();
-  const email = `owner-${suffix}@example.test`;
-  const other = `member-${suffix}@example.test`;
+  const email = `owner-${suffix}`;
+  const other = `member-${suffix}`;
   try {
     await json(anonymous, "/workspaces", "GET", undefined, 401);
     await json(
@@ -51,15 +51,9 @@ test("accounts, session revocation, workspace isolation and persistent task life
       { name: "Bad", email: "nope", password: "short" },
       400,
     );
-    const registration = await json(owner, "/register", "POST", {
-      name: "QA Owner",
-      email,
-      password,
-    });
-    assert.ok(registration.recoveryCode);
-    await json(member, "/register", "POST", {
-      name: "QA Member",
-      email: other,
+    await json(owner, "/register", "POST", {
+      name: email,
+      email: `${email}@example.test`,
       password,
     });
     const u = await login(owner, email),
@@ -149,28 +143,37 @@ test("accounts, session revocation, workspace isolation and persistent task life
     assert.equal(cross.status(), 403);
     await json(owner, `/tasks/${task.id}`, "DELETE");
     assert.deepEqual(await json(owner, `/tasks?workspaceId=${w.id}`), []);
-    const newPassword = "Changed QA password 932!";
-    await json(owner, "/account", "PATCH", {
-      currentPassword: password,
-      newPassword,
-    });
-    await json(owner, "/workspaces", "GET", undefined, 401);
-    await login(owner, email, newPassword);
-    const recovered = await json(anonymous, "/recover", "POST", {
-      email,
-      recoveryCode: registration.recoveryCode,
-      password,
-    });
-    assert.notEqual(recovered.recoveryCode, registration.recoveryCode);
-    await json(owner, "/workspaces", "GET", undefined, 401);
-    await login(owner, email);
-    await json(
-      anonymous,
-      "/recover",
-      "POST",
-      { email, recoveryCode: registration.recoveryCode, password },
-      400,
-    );
+    const returning = await client();
+    try {
+      const same = await login(returning, `  ${email.toUpperCase()}  `);
+      assert.equal(
+        same.id,
+        u.id,
+        "Case and whitespace restore the same username profile",
+      );
+      assert.equal(same.username, email);
+      assert.equal(
+        same.email,
+        "",
+        "Internal identity keys are not exposed as email",
+      );
+      assert.equal(same.name, "QA Renamed");
+      assert.equal((await json(returning, "/workspaces"))[0].id, w.id);
+      await json(
+        returning,
+        "/account",
+        "PATCH",
+        { newPassword: password },
+        400,
+      );
+      const { csrfToken } = await json(anonymous, "/auth/csrf");
+      await anonymous.post("/api/auth/callback/credentials", {
+        form: { csrfToken, username: "bad username!", json: "true" },
+      });
+      assert.equal((await json(anonymous, "/auth/session")).user, undefined);
+    } finally {
+      await returning.dispose();
+    }
   } finally {
     await Promise.all([anonymous.dispose(), owner.dispose(), member.dispose()]);
   }

@@ -60,10 +60,11 @@ export function WorkspacesPage() {
         </button>
       </header>
       <main className="hub-main">
-        <span className="eyebrow">A SPACE FOR YOUR TEAM</span>
+        <span className="eyebrow">02 / CHOOSE YOUR WORKSPACE</span>
         <h1>Hello, {data?.user?.name.split(" ")[0]}.</h1>
         <p className="muted">
-          Pick up where you left off, or start something together.
+          Select a workspace below, create a new one, or join with your team’s
+          invite.
         </p>
         {error && (
           <p role="alert" className="request-error">

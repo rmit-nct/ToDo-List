@@ -25,7 +25,7 @@ export const taskSchema = z.object({
 const publicUser = (u: { id: string; name: string; email: string }) => ({
   id: u.id,
   name: u.name,
-  email: u.email,
+  email: u.email.startsWith("username:") ? undefined : u.email,
   initials: u.name
     .split(/\s+/)
     .filter(Boolean)
@@ -63,18 +63,16 @@ export async function handle(request: Request, path: string[]) {
     await rateLimit("register-email", body.email, 4, 60);
     const recoveryCode = randomBytes(24).toString("base64url");
     try {
-      await database
-        .collection("users")
-        .insertOne({
-          id: randomUUID(),
-          name: body.name,
-          email: body.email,
-          passwordHash: await hash(body.password, 12),
-          recoveryHash: digest(recoveryCode),
-          sessionVersion: 0,
-          theme: "system",
-          createdAt: new Date(),
-        });
+      await database.collection("users").insertOne({
+        id: randomUUID(),
+        name: body.name,
+        email: body.email,
+        passwordHash: await hash(body.password, 12),
+        recoveryHash: digest(recoveryCode),
+        sessionVersion: 0,
+        theme: "system",
+        createdAt: new Date(),
+      });
     } catch (e) {
       if ((e as { code?: number }).code === 11000)
         throw new HttpError(
@@ -95,18 +93,16 @@ export async function handle(request: Request, path: string[]) {
       .parse(await readJson(request));
     await rateLimit("recover", body.email, 5, 60);
     const recoveryCode = randomBytes(24).toString("base64url");
-    const result = await database
-      .collection("users")
-      .updateOne(
-        { email: body.email, recoveryHash: digest(body.recoveryCode) },
-        {
-          $set: {
-            passwordHash: await hash(body.password, 12),
-            recoveryHash: digest(recoveryCode),
-          },
-          $inc: { sessionVersion: 1 },
+    const result = await database.collection("users").updateOne(
+      { email: body.email, recoveryHash: digest(body.recoveryCode) },
+      {
+        $set: {
+          passwordHash: await hash(body.password, 12),
+          recoveryHash: digest(recoveryCode),
         },
-      );
+        $inc: { sessionVersion: 1 },
+      },
+    );
     if (!result.matchedCount)
       throw new HttpError(400, "Email or recovery code is incorrect.");
     return { recoveryCode };
@@ -149,6 +145,8 @@ export async function handle(request: Request, path: string[]) {
       const changes: Record<string, unknown> = {};
       if (body.name) changes.name = body.name;
       if (body.theme) changes.theme = body.theme;
+      if (body.newPassword && user.username)
+        throw new HttpError(400, "Username profiles do not use passwords.");
       if (body.newPassword) {
         await rateLimit("password-change", user.id, 5);
         const record = await database
@@ -161,15 +159,13 @@ export async function handle(request: Request, path: string[]) {
           throw new HttpError(400, "Current password is incorrect.");
         changes.passwordHash = await hash(body.newPassword, 12);
       }
-      await database
-        .collection("users")
-        .updateOne(
-          { id: user.id },
-          {
-            $set: changes,
-            ...(body.newPassword ? { $inc: { sessionVersion: 1 } } : {}),
-          },
-        );
+      await database.collection("users").updateOne(
+        { id: user.id },
+        {
+          $set: changes,
+          ...(body.newPassword ? { $inc: { sessionVersion: 1 } } : {}),
+        },
+      );
       return { ok: true, signInAgain: !!body.newPassword };
     }
   }

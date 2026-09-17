@@ -19,29 +19,13 @@ try {
     fullPage: true,
     animations: "disabled",
   });
-  await page
-    .getByRole("button", { name: "New to NEO? Create an account" })
-    .click();
-  const email = `browser-${Date.now()}@example.test`;
-  await page.getByLabel("Your name").fill("QA Browser");
-  await page.getByLabel("Email address", { exact: true }).fill(email);
-  await page
-    .getByLabel("Password", { exact: true })
-    .fill("Browser QA password! 932");
-  await page
-    .getByRole("button", { name: "Create account", exact: true })
-    .click();
+  const username = `browser-${Date.now()}`;
+  await expect(page.locator('input[type="password"]')).toHaveCount(0);
+  await page.getByLabel("Username", { exact: true }).fill(username);
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Keep your recovery key safe" }),
+    page.getByRole("heading", { name: `Hello, ${username}.` }),
   ).toBeVisible();
-  await page.getByLabel("I have saved my recovery key").check();
-  await page.getByRole("button", { name: "Continue to sign in" }).click();
-  await page.getByLabel("Email address", { exact: true }).fill(email);
-  await page
-    .getByLabel("Password", { exact: true })
-    .fill("Browser QA password! 932");
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Hello, QA." })).toBeVisible();
   await page.getByLabel("Workspace name").fill("Design studio");
   await page
     .getByRole("button", { name: "Create workspace", exact: true })
@@ -95,7 +79,31 @@ try {
   await expect(
     page.getByRole("heading", { name: "Prepare the project demo" }),
   ).toBeVisible();
+  await page.getByRole("link", { name: "Calendar", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Deadline calendar" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Prepare the project demo" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Next month" }).click();
+  await page.getByRole("button", { name: "Today", exact: true }).click();
+  await page.screenshot({
+    path: "/tmp/nct-qa/calendar-desktop.png",
+    fullPage: true,
+  });
+  await page.getByRole("link", { name: "Team workload", exact: true }).click();
+  await page.getByRole("link", { name: `View tasks for ${username}` }).click();
+  await expect(page.getByLabel("Filter by assignee")).not.toHaveValue("all");
+  await expect(
+    page.getByRole("heading", { name: "Prepare the project demo" }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Overview", exact: true }).click();
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export CSV" }).click();
+  await expect((await download).suggestedFilename()).toMatch(/nct-tasks.*csv/);
   await page.getByRole("link", { name: "Settings", exact: true }).click();
+  await expect(page.locator('input[type="password"]')).toHaveCount(0);
   await page.getByLabel("Display name").fill("QA Updated");
   await page.getByRole("button", { name: "Save profile" }).click();
   await expect(
@@ -136,7 +144,7 @@ try {
   ).toBeHidden();
   if (errors.length) throw new Error(errors.join("\n"));
   console.log(
-    "Browser QA passed: registration, login, creation, reload persistence, quick actions, column collapse, theme persistence, My Tasks, profile save, mobile navigation, dialog Escape, deletion; no page errors or horizontal overflow.",
+    "Browser QA passed: username login, calendar, workload filtering, CSV export, creation, reload persistence, quick actions, column collapse, theme persistence, My Tasks, profile save, mobile navigation, dialog Escape, deletion; no page errors or horizontal overflow.",
   );
 } finally {
   await browser.close();

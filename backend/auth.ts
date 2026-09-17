@@ -1,36 +1,57 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { getServerSession } from "next-auth";
-import { compare } from "bcryptjs";
+import { randomUUID } from "node:crypto";
 import { db } from "./db";
-import { emailSchema, passwordSchema, rateLimit, HttpError } from "./security";
+import { usernameSchema, rateLimit, HttpError } from "./security";
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   session: { strategy: "jwt", maxAge: 7 * 24 * 60 * 60 },
   pages: { signIn: "/login" },
   providers: [
     CredentialsProvider({
-      name: "Email and password",
-      credentials: { email: { type: "email" }, password: { type: "password" } },
-      async authorize(credentials) {
-        const email = emailSchema.safeParse(credentials?.email);
-        const password = passwordSchema.safeParse(credentials?.password);
-        if (!email.success || !password.success) return null;
-        await rateLimit("login", email.data, 15);
+      name: "Username",
+      credentials: { username: { label: "Username", type: "text" } },
+      async authorize(credentials, request) {
+        const parsed = usernameSchema.safeParse(credentials?.username);
+        if (!parsed.success) return null;
+        const username = parsed.data;
+        const ip = String(
+          request.headers?.["x-vercel-forwarded-for"] ||
+            request.headers?.["x-forwarded-for"] ||
+            "local",
+        ).split(",")[0];
+        await rateLimit("username-login-ip", ip, 60);
+        await rateLimit("username-login", username, 30);
         const database = await db();
-        const user = await database
-          .collection("users")
-          .findOne({ email: email.data });
-        const valid = await compare(
-          password.data,
-          user?.passwordHash ||
-            "$2b$12$R9h/cIPz0gi.URNNX3kh2OPST9/PgBkqquzi.Ss7KIUgO2t0jWMUW",
-        );
-        if (!user || !valid) return null;
+        // This namespace cannot match a legacy email/password identity.
+        const identity = { username, authMode: "username" };
+        let user;
+        try {
+          user = await database.collection("users").findOneAndUpdate(
+            identity,
+            {
+              $setOnInsert: {
+                ...identity,
+                id: randomUUID(),
+                name: username,
+                // Internal unique key for the existing email index; never exposed as an email.
+                email: `username:${username}`,
+                sessionVersion: 0,
+                theme: "system",
+                createdAt: new Date(),
+              },
+            },
+            { upsert: true, returnDocument: "after" },
+          );
+        } catch (error) {
+          if ((error as { code?: number }).code !== 11000) throw error;
+          user = await database.collection("users").findOne(identity);
+        }
+        if (!user) return null;
         return {
           id: user.id,
           name: user.name,
-          email: user.email,
           version: user.sessionVersion || 0,
         };
       },
@@ -58,7 +79,8 @@ export const authOptions: NextAuthOptions = {
         user: {
           id: user.id,
           name: user.name,
-          email: user.email,
+          email: user.authMode === "username" ? "" : user.email,
+          username: user.username,
           theme: user.theme || "system",
         },
       };

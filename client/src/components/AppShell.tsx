@@ -139,7 +139,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             </span>
             <div>
               <strong>{data?.user?.name}</strong>
-              <small>{data?.user?.email}</small>
+              <small>
+                {data?.user?.username
+                  ? `@${data.user.username}`
+                  : data?.user?.email}
+              </small>
             </div>
           </div>
         </div>

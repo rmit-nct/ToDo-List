@@ -86,8 +86,11 @@ export function SettingsPage() {
             />
           </label>
           <label>
-            Email address
-            <input value={data?.user?.email ?? ""} readOnly />
+            {data?.user?.username ? "Username" : "Email address"}
+            <input
+              value={data?.user?.username ?? data?.user?.email ?? ""}
+              readOnly
+            />
           </label>
           <label>
             Appearance
@@ -101,37 +104,39 @@ export function SettingsPage() {
             Save profile
           </button>
         </form>
-        <form className="panel" onSubmit={(e) => save(e, "/account")}>
-          <h2>Password</h2>
-          <p className="muted">
-            Changing your password signs out all active sessions.
-          </p>
-          <label>
-            Current password
-            <input
-              name="currentPassword"
-              type="password"
-              autoComplete="current-password"
-              minLength={12}
-              maxLength={72}
-              required
-            />
-          </label>
-          <label>
-            New password
-            <input
-              name="newPassword"
-              type="password"
-              autoComplete="new-password"
-              minLength={12}
-              maxLength={72}
-              required
-            />
-          </label>
-          <button className="secondary" disabled={busy}>
-            Change password
-          </button>
-        </form>
+        {!data?.user?.username && (
+          <form className="panel" onSubmit={(e) => save(e, "/account")}>
+            <h2>Password</h2>
+            <p className="muted">
+              Changing your password signs out all active sessions.
+            </p>
+            <label>
+              Current password
+              <input
+                name="currentPassword"
+                type="password"
+                autoComplete="current-password"
+                minLength={12}
+                maxLength={72}
+                required
+              />
+            </label>
+            <label>
+              New password
+              <input
+                name="newPassword"
+                type="password"
+                autoComplete="new-password"
+                minLength={12}
+                maxLength={72}
+                required
+              />
+            </label>
+            <button className="secondary" disabled={busy}>
+              Change password
+            </button>
+          </form>
+        )}
         {workspace.ownerId === data?.user?.id && (
           <>
             <form

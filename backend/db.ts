@@ -19,6 +19,15 @@ export async function db() {
   indexes ??= Promise.all([
     database.collection("users").createIndex({ email: 1 }, { unique: true }),
     database.collection("users").createIndex({ id: 1 }, { unique: true }),
+    database
+      .collection("users")
+      .createIndex(
+        { username: 1 },
+        {
+          unique: true,
+          partialFilterExpression: { username: { $type: "string" } },
+        },
+      ),
     database.collection("workspaces").createIndex({ id: 1 }, { unique: true }),
     database.collection("workspaces").createIndex({ memberIds: 1 }),
     database
