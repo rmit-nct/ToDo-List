@@ -38,14 +38,26 @@
   gap: 6%;
   aspect-ratio: 480 / 104;
 }
-.neo-logo__symbol, .neo-logo__wordmark {
+.neo-logo__symbol,
+.neo-logo__wordmark {
   display: block;
   width: 100%;
   overflow: hidden;
 }
-.neo-logo__symbol { aspect-ratio: 112 / 98; }
-.neo-logo__wordmark { aspect-ratio: 333 / 43; }
+.neo-logo__symbol {
+  aspect-ratio: 112 / 98;
+}
+.neo-logo__wordmark {
+  aspect-ratio: 333 / 43;
+}
 .neo-logo .neo-logo__lockup.neo-logo__image--dark,
-.theme-dark .neo-logo--on-dark .neo-logo__lockup.neo-logo__image--light { display: none; }
-.theme-dark .neo-logo--on-dark .neo-logo__lockup.neo-logo__image--dark { display: grid; }
-.neo-logo--compact .neo-logo__image { height: 36px; object-fit: contain; }
+.theme-dark .neo-logo--on-dark .neo-logo__lockup.neo-logo__image--light {
+  display: none;
+}
+.theme-dark .neo-logo--on-dark .neo-logo__lockup.neo-logo__image--dark {
+  display: grid;
+}
+.neo-logo--compact .neo-logo__image {
+  height: 36px;
+  object-fit: contain;
+}

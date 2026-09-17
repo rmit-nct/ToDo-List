@@ -1,13 +1,41 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;1,700;1,800&display=swap');
-
-.api-status{margin:14px 180px 0 48px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font-size:12px;display:flex;justify-content:space-between;gap:12px}
-.api-status button{border:0;background:transparent;color:inherit;cursor:pointer}
-.request-error{grid-column:1/-1;padding:10px;border-radius:8px;background:color-mix(in srgb,var(--coral) 14%,var(--surface));color:var(--ink);font-size:12px}
-.modal button:disabled{opacity:.6;cursor:not-allowed}
-@media(max-width:760px){.api-status{margin:12px 18px}}
+.api-status {
+  margin: 14px 180px 0 48px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.api-status button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.request-error {
+  grid-column: 1/-1;
+  padding: 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--coral) 14%, var(--surface));
+  color: var(--ink);
+  font-size: 12px;
+}
+.modal button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+@media (max-width: 760px) {
+  .api-status {
+    margin: 12px 18px;
+  }
+}
 
 :root {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   color: #202946;
   background: #e3edf9;
   font-synthesis: none;
@@ -63,7 +91,9 @@ textarea:focus-visible,
   min-height: 100vh;
   background: var(--canvas);
   color: var(--ink);
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 
 .theme-dark {
@@ -414,7 +444,7 @@ nav a.active {
 }
 
 .page-heading h1::after {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
   bottom: 0;
@@ -569,18 +599,14 @@ nav a.active {
   width: 66px;
   height: 66px;
   border-radius: 50%;
-  background:
-    conic-gradient(
-      var(--yellow) var(--progress),
-      #eef0f5 0
-    );
+  background: conic-gradient(var(--yellow) var(--progress), #eef0f5 0);
   display: grid;
   place-items: center;
   position: relative;
 }
 
 .progress-ring::after {
-  content: '';
+  content: "";
   position: absolute;
   width: 52px;
   height: 52px;
@@ -625,9 +651,7 @@ nav a.active {
 
 .search:focus-within {
   border-color: var(--teal);
-  box-shadow:
-    0 0 0 3px
-    color-mix(in srgb, var(--teal) 15%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal) 15%, transparent);
 }
 
 .search svg,
@@ -781,7 +805,6 @@ nav a.active {
   box-shadow: 0 7px 18px rgba(32, 41, 70, 0.07);
 }
 
-
 /* Top */
 
 .card-top {
@@ -832,7 +855,6 @@ nav a.active {
   color: #34788b;
 }
 
-
 /* More button */
 
 .task-more-button {
@@ -864,7 +886,6 @@ nav a.active {
   width: 16px;
   height: 16px;
 }
-
 
 /* Content */
 
@@ -901,7 +922,6 @@ nav a.active {
   opacity: 0.55;
   font-style: italic;
 }
-
 
 /* Footer */
 
@@ -956,7 +976,6 @@ nav a.active {
   font-size: 8px;
   font-weight: 700;
 }
-
 
 /* Empty task group */
 
@@ -1062,8 +1081,7 @@ nav a.active {
 }
 
 .kanban-column {
-  background:
-    color-mix(in srgb, var(--surface) 73%, var(--canvas));
+  background: color-mix(in srgb, var(--surface) 73%, var(--canvas));
   border: 1px solid var(--line);
   border-radius: 13px;
   padding: 14px;
@@ -1111,8 +1129,7 @@ nav a.active {
 .add-card:hover {
   border-color: var(--teal);
   color: var(--ink);
-  background:
-    color-mix(in srgb, var(--teal) 5%, transparent);
+  background: color-mix(in srgb, var(--teal) 5%, transparent);
 }
 
 .add-card svg {
@@ -1236,21 +1253,18 @@ nav a.active {
 .theme-dark nav a.active,
 .theme-dark .sidebar-footer a:hover,
 .theme-dark .sidebar-footer button:hover {
-  background:
-    color-mix(in srgb, var(--teal) 10%, var(--canvas));
+  background: color-mix(in srgb, var(--teal) 10%, var(--canvas));
   color: var(--ink);
 }
 
 .theme-dark .workspace-select {
-  background:
-    color-mix(in srgb, var(--teal) 9%, var(--canvas));
+  background: color-mix(in srgb, var(--teal) 9%, var(--canvas));
   color: var(--ink);
   border: 1px solid #353748;
 }
 
 .theme-dark .profile {
-  background:
-    color-mix(in srgb, var(--surface) 88%, #000);
+  background: color-mix(in srgb, var(--surface) 88%, #000);
   border: 1px solid #343344;
 }
 
@@ -1291,8 +1305,7 @@ nav a.active {
 }
 
 .theme-dark .task-card:hover {
-  border-color:
-    color-mix(in srgb, var(--teal) 38%, var(--line));
+  border-color: color-mix(in srgb, var(--teal) 38%, var(--line));
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
 }
 
@@ -1342,8 +1355,7 @@ nav a.active {
 }
 
 .kanban-column {
-  background:
-    color-mix(in srgb, var(--surface) 64%, var(--canvas));
+  background: color-mix(in srgb, var(--surface) 64%, var(--canvas));
   border-radius: 12px;
   box-shadow: none;
 }
@@ -1518,8 +1530,7 @@ nav a.active {
 }
 
 .column-toggle:hover {
-  background:
-    color-mix(in srgb, var(--teal) 9%, transparent);
+  background: color-mix(in srgb, var(--teal) 9%, transparent);
   color: var(--ink);
 }
 

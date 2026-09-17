@@ -1,132 +1,92 @@
-import { useMemo, useState } from 'react';
+import { useSession } from "next-auth/react";
+import { useMemo, useState } from "react";
 import {
   CheckCircle2,
-  ChevronRight,
   CircleAlert,
   Clock3,
   Plus,
   Search,
   SlidersHorizontal,
-} from 'lucide-react';
-import { useParams } from 'react-router-dom';
+} from "lucide-react";
+import { useWorkspace } from "../workspaceContext";
 
-import { TaskCard } from '../components/TaskCard';
-import { TaskModal } from '../components/TaskModal';
-import { useTasks } from '../taskStoreContext';
-import type { Task } from '../types';
+import { TaskCard } from "../components/TaskCard";
+import { TaskModal } from "../components/TaskModal";
+import { useTasks } from "../taskStoreContext";
+import type { Task } from "../types";
 
 const dayStart = (date: Date) =>
-  new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate()
-  ).getTime();
+  new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
 
 export function TodayDashboard() {
-  const { workspaceId = 'web-dev' } = useParams();
+  const { workspace } = useWorkspace();
+  const workspaceId = workspace.id;
 
   const { tasks } = useTasks();
 
-  const [query, setQuery] = useState('');
-  const [status, setStatus] = useState('all');
-  const [priority, setPriority] = useState('all');
-  const [modalTask, setModalTask] =
-    useState<Task | null | undefined>(undefined);
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState("all");
+  const [priority, setPriority] = useState("all");
+  const [modalTask, setModalTask] = useState<Task | null | undefined>(
+    undefined,
+  );
 
-  const identity = workspaceId
-    ? localStorage.getItem(
-        `memberIdentity:${workspaceId}`
-      )
-    : null;
-
-  let memberName = 'Workspace Member';
-
-  if (identity) {
-    try {
-      const parsedIdentity = JSON.parse(identity);
-
-      if (parsedIdentity.name) {
-        memberName = parsedIdentity.name;
-      }
-    } catch {
-      memberName = 'Workspace Member';
-    }
-  }
+  const { data: session } = useSession();
+  const memberName = session?.user?.name ?? "";
 
   const workspaceTasks = tasks.filter(
-    (task) =>
-      task.workspaceId === workspaceId
+    (task) => task.workspaceId === workspaceId,
   );
 
   const filtered = useMemo(
     () =>
       workspaceTasks.filter(
         (task) =>
-          task.title
-            .toLowerCase()
-            .includes(query.toLowerCase()) &&
-          (status === 'all' ||
-            task.status === status) &&
-          (priority === 'all' ||
-            task.priority === priority)
+          task.title.toLowerCase().includes(query.toLowerCase()) &&
+          (status === "all" || task.status === status) &&
+          (priority === "all" || task.priority === priority),
       ),
-    [
-      workspaceTasks,
-      query,
-      status,
-      priority,
-    ]
+    [workspaceTasks, query, status, priority],
   );
 
   const today = dayStart(new Date());
-  const week = today + 7 * 86400000;
+  const weekEnd = new Date();
+  weekEnd.setHours(0, 0, 0, 0);
+  weekEnd.setDate(weekEnd.getDate() + (7 - ((weekEnd.getDay() + 6) % 7)));
+  const week = weekEnd.getTime();
 
   const overdue = filtered.filter(
     (task) =>
-      dayStart(new Date(task.dueDate)) <
-        today &&
-      task.status !== 'done'
+      dayStart(new Date(task.dueDate.slice(0, 10) + "T12:00:00")) < today &&
+      task.status !== "done",
   );
 
   const dueToday = filtered.filter(
     (task) =>
-      dayStart(new Date(task.dueDate)) ===
-      today
+      dayStart(new Date(task.dueDate.slice(0, 10) + "T12:00:00")) === today,
   );
 
-  const thisWeek = filtered.filter(
-    (task) => {
-      const date = dayStart(
-        new Date(task.dueDate)
-      );
+  const thisWeek = filtered.filter((task) => {
+    const date = dayStart(new Date(task.dueDate));
 
-      return (
-        date > today &&
-        date < week
-      );
-    }
-  );
+    return date > today && date < week;
+  });
 
   const completed = workspaceTasks.filter(
-    (task) => task.status === 'done'
+    (task) => task.status === "done",
   ).length;
 
   const completion = workspaceTasks.length
-    ? Math.round(
-        (completed /
-          workspaceTasks.length) *
-          100
-      )
+    ? Math.round((completed / workspaceTasks.length) * 100)
     : 0;
 
-  const todayLabel =
-    new Intl.DateTimeFormat('en', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-    })
-      .format(new Date())
-      .toUpperCase();
+  const todayLabel = new Intl.DateTimeFormat("en", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  })
+    .format(new Date())
+    .toUpperCase();
 
   return (
     <div className="page">
@@ -141,21 +101,13 @@ export function TodayDashboard() {
           </span>
         </div>
 
-        <button
-          className="primary"
-          onClick={() =>
-            setModalTask(null)
-          }
-        >
+        <button className="primary" onClick={() => setModalTask(null)}>
           <Plus />
           New task
         </button>
       </div>
 
-      <section
-        className="stats-grid"
-        aria-label="Task summary"
-      >
+      <section className="stats-grid" aria-label="Task summary">
         <article>
           <span className="stat-icon navy">
             <Clock3 />
@@ -163,9 +115,7 @@ export function TodayDashboard() {
 
           <div>
             <small>TOTAL TASKS</small>
-            <strong>
-              {workspaceTasks.length}
-            </strong>
+            <strong>{workspaceTasks.length}</strong>
             <p>In this workspace</p>
           </div>
         </article>
@@ -178,7 +128,7 @@ export function TodayDashboard() {
           <div>
             <small>COMPLETED</small>
             <strong>{completed}</strong>
-            <p>{completion}% this week</p>
+            <p>{completion}% of all tasks</p>
           </div>
         </article>
 
@@ -194,13 +144,8 @@ export function TodayDashboard() {
               {
                 workspaceTasks.filter(
                   (task) =>
-                    dayStart(
-                      new Date(
-                        task.dueDate
-                      )
-                    ) < today &&
-                    task.status !==
-                      'done'
+                    dayStart(new Date(task.dueDate)) < today &&
+                    task.status !== "done",
                 ).length
               }
             </strong>
@@ -211,40 +156,31 @@ export function TodayDashboard() {
 
         <article className="progress-card">
           <div>
-            <small>THIS WEEK</small>
-            <strong>
-              {completion}%
-            </strong>
-            <p>Weekly progress</p>
+            <small>PROGRESS</small>
+            <strong>{completion}%</strong>
+            <p>All workspace tasks</p>
           </div>
 
           <div
             className="progress-ring"
             style={
               {
-                '--progress': `${completion * 3.6}deg`,
+                "--progress": `${completion * 3.6}deg`,
               } as React.CSSProperties
             }
           >
-            <span>
-              {completion}%
-            </span>
+            <span>{completion}%</span>
           </div>
         </article>
       </section>
 
-      <section
-        className="filters"
-        aria-label="Task filters"
-      >
+      <section className="filters" aria-label="Task filters">
         <div className="search">
           <Search />
 
           <input
             value={query}
-            onChange={(e) =>
-              setQuery(e.target.value)
-            }
+            onChange={(e) => setQuery(e.target.value)}
             placeholder="Search tasks..."
             aria-label="Search tasks"
           />
@@ -257,55 +193,41 @@ export function TodayDashboard() {
 
         <select
           value={status}
-          onChange={(e) =>
-            setStatus(e.target.value)
-          }
+          onChange={(e) => setStatus(e.target.value)}
           aria-label="Filter by status"
         >
-          <option value="all">
-            All statuses
-          </option>
+          <option value="all">All statuses</option>
 
-          <option value="todo">
-            To do
-          </option>
+          <option value="todo">To do</option>
 
-          <option value="in-progress">
-            In progress
-          </option>
+          <option value="in-progress">In progress</option>
 
-          <option value="done">
-            Done
-          </option>
+          <option value="done">Done</option>
         </select>
 
         <select
           value={priority}
-          onChange={(e) =>
-            setPriority(
-              e.target.value
-            )
-          }
+          onChange={(e) => setPriority(e.target.value)}
           aria-label="Filter by priority"
         >
-          <option value="all">
-            All priorities
-          </option>
+          <option value="all">All priorities</option>
 
-          <option value="high">
-            High
-          </option>
+          <option value="high">High</option>
 
-          <option value="medium">
-            Medium
-          </option>
+          <option value="medium">Medium</option>
 
-          <option value="low">
-            Low
-          </option>
+          <option value="low">Low</option>
         </select>
       </section>
 
+      <TaskGroup
+        title="High priority"
+        tone="yellow"
+        tasks={filtered.filter(
+          (task) => task.priority === "high" && task.status !== "done",
+        )}
+        onOpen={setModalTask}
+      />
       <TaskGroup
         title="Overdue"
         tone="coral"
@@ -329,18 +251,9 @@ export function TodayDashboard() {
 
       {modalTask !== undefined ? (
         <TaskModal
-          task={
-            modalTask ??
-            undefined
-          }
-          workspaceId={
-            workspaceId
-          }
-          onClose={() =>
-            setModalTask(
-              undefined
-            )
-          }
+          task={modalTask ?? undefined}
+          workspaceId={workspaceId}
+          onClose={() => setModalTask(undefined)}
         />
       ) : null}
     </div>
@@ -362,40 +275,25 @@ function TaskGroup({
     <section className="task-group">
       <div className="group-heading">
         <div>
-          <span
-            className={`group-dot ${tone}`}
-          />
+          <span className={`group-dot ${tone}`} />
 
           <h2>{title}</h2>
 
-          <small>
-            {tasks.length}
-          </small>
+          <small>{tasks.length}</small>
         </div>
-
-        <button>
-          View all
-          <ChevronRight />
-        </button>
       </div>
 
       {tasks.length ? (
         <div className="task-list">
           {tasks.map((task) => (
-            <TaskCard
-              task={task}
-              onOpen={onOpen}
-              key={task.id}
-            />
+            <TaskCard task={task} onOpen={onOpen} key={task.id} />
           ))}
         </div>
       ) : (
         <div className="empty-state">
           <CheckCircle2 />
 
-          <p>
-            Nothing here — you’re all caught up.
-          </p>
+          <p>Nothing here — you’re all caught up.</p>
         </div>
       )}
     </section>

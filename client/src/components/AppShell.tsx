@@ -1,341 +1,190 @@
-import { API_BASE_URL } from '../api'
-import { useTasks } from '../taskStoreContext'
-
-import {
-  useEffect,
-  useState,
-  type ReactNode,
-} from 'react'
+import { useEffect, useState, type ReactNode } from "react";
 import {
   CalendarDays,
-  ChevronDown,
   Home,
   LayoutDashboard,
   Menu,
   Moon,
   Settings,
-  Share2,
   Sun,
   UserRoundCheck,
   X,
-} from 'lucide-react'
-import {
-  NavLink,
-  useParams,
-} from 'react-router-dom'
-
-import { BrandLogo } from './BrandLogo'
-
-type WorkspaceData = {
-  id: string
-  name: string
-}
-
-type MemberIdentity = {
-  workspaceId: string
-  id: string
-  name: string
-  email?: string
-}
-
-export function AppShell({
-  children,
-}: {
-  children: ReactNode
-}) {
-  const { workspaceId } = useParams()
-  const { error, isLoading, clearError } = useTasks()
-
-  const [dark, setDark] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [workspaceOpen, setWorkspaceOpen] =
-    useState(true)
-
-  const [workspace, setWorkspace] =
-    useState<WorkspaceData | null>(null)
-
-  const [member, setMember] =
-    useState<MemberIdentity | null>(null)
-
+  LogOut,
+  ArrowLeft,
+  Link2,
+} from "lucide-react";
+import { NavLink, useLocation } from "react-router-dom";
+import { signOut, useSession } from "next-auth/react";
+import { BrandLogo } from "./BrandLogo";
+import { useWorkspace } from "../workspaceContext";
+import { useTasks } from "../taskStoreContext";
+import { api } from "../api";
+export function AppShell({ children }: { children: ReactNode }) {
+  const { workspace, error: workspaceError, reload } = useWorkspace();
+  const { data, update } = useSession();
+  const { error, isLoading } = useTasks();
+  const [menuPath, setMenuPath] = useState<string | null>(null);
+  const [message, setMessage] = useState("");
+  const [systemDark, setSystemDark] = useState(false);
+  const location = useLocation();
+  const menuOpen = menuPath === location.pathname;
+  const setMenuOpen = (open: boolean) =>
+    setMenuPath(open ? location.pathname : null);
+  const theme = data?.user?.theme ?? "system";
+  const dark = theme === "dark" || (theme === "system" && systemDark);
   useEffect(() => {
-    if (!workspaceId) {
-      return
+    const query = matchMedia("(prefers-color-scheme: dark)");
+    const sync = () => setSystemDark(query.matches);
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
+  useEffect(() => {
+    const escape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuPath(null);
+    };
+    document.addEventListener("keydown", escape);
+    return () => document.removeEventListener("keydown", escape);
+  }, []);
+  async function toggleTheme() {
+    try {
+      await api("/account", {
+        method: "PATCH",
+        body: JSON.stringify({ theme: dark ? "light" : "dark" }),
+      });
+      await update();
+    } catch (e) {
+      setMessage((e as Error).message);
     }
-
-    const savedIdentity = localStorage.getItem(
-      `memberIdentity:${workspaceId}`
-    )
-
-    if (savedIdentity) {
-      try {
-        const parsedIdentity =
-          JSON.parse(savedIdentity)
-
-        setMember(parsedIdentity)
-      } catch {
-        setMember(null)
-      }
-    }
-
-    const loadWorkspace = async () => {
-      try {
-        const response = await fetch(
-          `${API_BASE_URL}/api/workspaces/${workspaceId}`
-        )
-
-        if (!response.ok) {
-          throw new Error(
-            'Failed to load workspace'
-          )
-        }
-
-        const data = await response.json()
-
-        setWorkspace({
-          id: data.id,
-          name: data.name,
-        })
-      } catch (error) {
-        console.error(
-          'Workspace load error:',
-          error
-        )
-      }
-    }
-
-    loadWorkspace()
-  }, [workspaceId])
-
-  const handleShareWorkspace = async () => {
-    if (!workspaceId) {
-      return
-    }
-
-    const shareUrl =
-      `${window.location.origin}/workspace/${workspaceId}`
-
-    await navigator.clipboard.writeText(
-      shareUrl
-    )
   }
-
-  const getInitials = (name?: string) => {
-    if (!name) {
-      return '?'
+  async function share() {
+    try {
+      await navigator.clipboard.writeText(
+        `${window.location.origin}/join/${workspace.inviteCode}`,
+      );
+      setMessage(
+        "Invite link copied. Anyone with this link can join after signing in.",
+      );
+    } catch {
+      setMessage("Could not copy. Open Settings to view your invite link.");
     }
-
-    return name
-      .split(' ')
-      .filter(Boolean)
-      .map((part) => part[0])
-      .join('')
-      .slice(0, 2)
-      .toUpperCase()
   }
-
-  const nav = (
-    <>
-      <div className="brand">
-        <BrandLogo />
-      </div>
-
-      <nav aria-label="Main navigation">
-        <p className="nav-label">
-          OVERVIEW
-        </p>
-
-        <NavLink
-          to={`/workspace/${workspaceId}/app/home`}
-        >
-          <Home />
-          Home
-        </NavLink>
-
-        <span className="future-nav">
-          <UserRoundCheck />
-          My Tasks
-        </span>
-
-        <button
-          type="button"
-          className="workspace-select central-workspace"
-          onClick={() =>
-            setWorkspaceOpen(
-              (value) => !value
-            )
-          }
-          aria-expanded={workspaceOpen}
-        >
-          <span className="workspace-dot">
-            {getInitials(
-              workspace?.name
-            ).slice(0, 1)}
-          </span>
-
-          <span>
-            {workspace?.name ??
-              'Loading workspace...'}
-          </span>
-
-          <ChevronDown
-            className={
-              workspaceOpen
-                ? 'rotate'
-                : ''
-            }
-          />
-        </button>
-
-        {workspaceOpen ? (
-          <div className="workspace-nav">
-            <NavLink
-              to={`/workspace/${workspaceId}/app/today`}
-            >
-              <CalendarDays />
-              Today Dashboard
-            </NavLink>
-
-            <NavLink
-              to={`/workspace/${workspaceId}/app/board`}
-            >
-              <LayoutDashboard />
-              Weekly Sprint Board
-            </NavLink>
-          </div>
-        ) : null}
-      </nav>
-
-      <div className="sidebar-footer">
-        <span className="future-nav">
-          <Settings />
-          Settings
-        </span>
-
-
-        <div className="profile">
-          <span className="avatar">
-            {getInitials(member?.name)}
-          </span>
-
-          <div>
-            <strong>
-              {member?.name ??
-                'Workspace Member'}
-            </strong>
-
-            <small>
-              {member?.email ||
-                'No email'}
-            </small>
-          </div>
-
-          <ChevronDown />
-        </div>
-      </div>
-    </>
-  )
-
+  const base = `/workspace/${workspace.id}/app`;
   return (
-    <div
-      className={
-        dark
-          ? 'app theme-dark'
-          : 'app'
-      }
-    >
-      <aside
-        className={
-          menuOpen
-            ? 'sidebar open'
-            : 'sidebar'
-        }
-      >
-        {nav}
+    <div className={dark ? "app theme-dark" : "app"}>
+      <a href="#main-content" className="skip-link">
+        Skip to content
+      </a>
+      <aside className={menuOpen ? "sidebar open" : "sidebar"}>
+        <div className="brand">
+          <BrandLogo />
+        </div>
+        <NavLink className="back-workspaces" to="/">
+          <ArrowLeft size={14} /> Your workspaces
+        </NavLink>
+        <div className="workspace-heading">
+          <span className="workspace-dot">
+            {workspace.name.slice(0, 1).toUpperCase()}
+          </span>
+          <strong>{workspace.name}</strong>
+        </div>
+        <nav aria-label="Main navigation">
+          <p className="nav-label">WORKSPACE</p>
+          <NavLink to={`${base}/home`}>
+            <Home /> Overview
+          </NavLink>
+          <NavLink to={`${base}/my-tasks`}>
+            <UserRoundCheck /> My tasks
+          </NavLink>
+          <NavLink to={`${base}/today`}>
+            <CalendarDays /> Today
+          </NavLink>
+          <NavLink to={`${base}/board`}>
+            <LayoutDashboard /> Sprint board
+          </NavLink>
+        </nav>
+        <div className="sidebar-footer">
+          <NavLink to={`${base}/settings`}>
+            <Settings /> Settings
+          </NavLink>
+          <button onClick={() => signOut({ callbackUrl: "/" })}>
+            <LogOut /> Sign out
+          </button>
+          <div className="profile">
+            <span className="avatar">
+              {data?.user?.name
+                .split(/\s+/)
+                .map((s) => s[0])
+                .join("")
+                .slice(0, 2)
+                .toUpperCase()}
+            </span>
+            <div>
+              <strong>{data?.user?.name}</strong>
+              <small>{data?.user?.email}</small>
+            </div>
+          </div>
+        </div>
       </aside>
-
-      {menuOpen ? (
+      {menuOpen && (
         <button
-          type="button"
           className="scrim"
           aria-label="Close menu"
-          onClick={() =>
-            setMenuOpen(false)
-          }
+          onClick={() => setMenuOpen(false)}
         />
-      ) : null}
-
-      <main className="main">
+      )}
+      <main className="main" id="main-content">
         <header className="mobile-header">
           <button
-            type="button"
-            aria-label="Open menu"
-            onClick={() =>
-              setMenuOpen(true)
-            }
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen(!menuOpen)}
           >
-            {menuOpen ? (
-              <X />
-            ) : (
-              <Menu />
-            )}
+            {menuOpen ? <X /> : <Menu />}
           </button>
-
           <BrandLogo compact />
-
-          <button
-            type="button"
-            aria-label="Toggle color theme"
-            onClick={() =>
-              setDark(
-                (value) => !value
-              )
-            }
-          >
-            {dark ? (
-              <Sun />
-            ) : (
-              <Moon />
-            )}
+          <button aria-label="Toggle color theme" onClick={toggleTheme}>
+            {dark ? <Sun /> : <Moon />}
           </button>
         </header>
-
         <div className="top-actions">
-          <button
-            type="button"
-            className="share-workspace-button"
-            onClick={
-              handleShareWorkspace
-            }
-          >
-            <Share2 />
-            Share Workspace
-          </button>
-
-          <button
-            type="button"
-            className="theme-toggle"
-            onClick={() =>
-              setDark(
-                (value) => !value
-              )
-            }
-          >
-            {dark ? (
-              <Sun />
-            ) : (
-              <Moon />
-            )}
-
-            {dark
-              ? 'Light'
-              : 'Dark'}
+          {workspace.inviteCode && (
+            <button className="share-workspace-button" onClick={share}>
+              <Link2 /> Invite team
+            </button>
+          )}
+          <button className="theme-toggle" onClick={toggleTheme}>
+            {dark ? <Sun /> : <Moon />}
+            {dark ? "Light" : "Dark"}
           </button>
         </div>
-
-        {isLoading ? <div className="api-status" role="status">Loading tasks...</div> : null}
-        {error ? <div className="api-status api-status-error" role="alert"><span>{error}</span><button onClick={clearError} aria-label="Dismiss message">×</button></div> : null}
+        {workspaceError && (
+          <div className="api-status" role="alert">
+            <span>{workspaceError}</span>
+            <button onClick={reload}>Retry</button>
+          </div>
+        )}
+        {message && (
+          <div className="api-status" role="status">
+            <span>{message}</span>
+            <button onClick={() => setMessage("")} aria-label="Dismiss message">
+              ×
+            </button>
+          </div>
+        )}
+        {isLoading && (
+          <div className="api-status" role="status">
+            Loading your tasks…
+          </div>
+        )}
+        {error && (
+          <div className="api-status api-status-error" role="alert">
+            <span>{error}</span>
+            <button onClick={() => window.location.reload()}>Retry</button>
+          </div>
+        )}
         {children}
       </main>
     </div>
-  )
+  );
 }

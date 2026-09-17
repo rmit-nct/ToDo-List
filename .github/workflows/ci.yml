@@ -1,0 +1,29 @@
+name: Validate
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run build
+      - name: Isolated MongoDB integration tests
+        run: |
+          QA_PRODUCTION=1 node scripts/test-server.mjs > /tmp/nct-test-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" || true' EXIT
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://localhost:3100/api/health > /dev/null; then break; fi
+            sleep 2
+          done
+          npm test

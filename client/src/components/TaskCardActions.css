@@ -23,12 +23,42 @@
   font-size: 12px;
   cursor: pointer;
 }
-.task-quick-actions button:hover, .task-quick-actions button:focus-visible { background: #e3edf9; }
-.task-quick-actions button:disabled { opacity: .55; cursor: wait; }
-.task-quick-actions span { display: block; padding: 6px 12px; font-size: 11px; }
-.task-quick-actions__label { opacity: .7; border-top: 1px solid #c5d5e7; margin-top: 3px; }
-.task-quick-actions .task-quick-actions__delete { color: #b33f36; border-top: 1px solid #c5d5e7; margin-top: 4px; }
-.task-quick-actions--dark { background: #211f2e; border-color: #444456; color: #f2f7fc; }
-.task-quick-actions--dark button:hover, .task-quick-actions--dark button:focus-visible { background: #343344; }
-.task-quick-actions--dark .task-quick-actions__delete { color: #ffaaa0; border-color: #444456; }
-.task-quick-actions--dark .task-quick-actions__label { border-color: #444456; }
+.task-quick-actions button:hover,
+.task-quick-actions button:focus-visible {
+  background: #e3edf9;
+}
+.task-quick-actions button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+.task-quick-actions span {
+  display: block;
+  padding: 6px 12px;
+  font-size: 11px;
+}
+.task-quick-actions__label {
+  opacity: 0.7;
+  border-top: 1px solid #c5d5e7;
+  margin-top: 3px;
+}
+.task-quick-actions .task-quick-actions__delete {
+  color: #b33f36;
+  border-top: 1px solid #c5d5e7;
+  margin-top: 4px;
+}
+.task-quick-actions--dark {
+  background: #211f2e;
+  border-color: #444456;
+  color: #f2f7fc;
+}
+.task-quick-actions--dark button:hover,
+.task-quick-actions--dark button:focus-visible {
+  background: #343344;
+}
+.task-quick-actions--dark .task-quick-actions__delete {
+  color: #ffaaa0;
+  border-color: #444456;
+}
+.task-quick-actions--dark .task-quick-actions__label {
+  border-color: #444456;
+}
