@@ -11,10 +11,11 @@
   ],
   "observability": { "enabled": true },
   "workers_dev": true,
+  "routes": [{ "pattern": "nct-todo.ttr.gg", "custom_domain": true }],
   "preview_urls": false,
   "placement": { "mode": "smart" },
   "vars": {
-    "NEXTAUTH_URL": "https://nct-planner.tuturuuu-e89.workers.dev",
+    "NEXTAUTH_URL": "https://nct-todo.ttr.gg",
     "MONGODB_DB": "nct-todo-production",
   },
 }
