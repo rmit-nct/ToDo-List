@@ -82,7 +82,7 @@ Browser QA uses an isolated, headless Google Chrome profile. Screenshots go to `
 
 Live URL: https://nct-todo.ttr.gg
 
-The app uses OpenNext on Cloudflare Workers in the **Tuturuuu** account. Deploy only the `ngoc/production-nextauth` branch; do not merge or change `main` as part of deployment.
+The app uses OpenNext on Cloudflare Workers in the **Skora Personal** account (the owner of `ttr.gg`). Deploy only the `ngoc/production-nextauth` branch; do not merge or change `main` as part of deployment.
 
 ```sh
 npm run build:cloudflare
