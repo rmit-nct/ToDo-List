@@ -1,3 +1,5 @@
+import "@fontsource/montserrat/600.css";
+import "@fontsource/montserrat/700.css";
 import "@fontsource/poppins/400.css";
 import "@fontsource/poppins/500.css";
 import "@fontsource/poppins/600.css";
@@ -6,10 +8,11 @@ import "@fontsource/poppins/800.css";
 import type { Metadata } from "next";
 import "../client/src/assets/app.css";
 import "../client/src/assets/product.css";
+import "../client/src/assets/planner.css";
 export const metadata: Metadata = {
-  title: "NEO — Space to get things done",
+  title: "NCT Planner — Neo Culture Tech",
   description:
-    "A focused workspace for your team. Plan your day, share ownership, and make progress together.",
+    "The team planner from RMIT Neo Culture Tech. Organize club projects, share ownership, and plan your next deadline.",
 };
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (

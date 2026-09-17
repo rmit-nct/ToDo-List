@@ -44,7 +44,7 @@ export function AuthPage({ returnTo }: { returnTo: string }) {
       <section className="entry-story">
         <BrandLogo />
         <div className="story-body">
-          <span className="eyebrow">NEO CULTURE TECH</span>
+          <span className="eyebrow">RMIT NEO CULTURE TECH / PLANNER</span>
           <h1>
             Good ideas.
             <br />
@@ -53,8 +53,8 @@ export function AuthPage({ returnTo }: { returnTo: string }) {
             <em>Real progress.</em>
           </h1>
           <p>
-            A little structure for your team’s big ideas. Make space for the
-            work that matters.
+            From your first club project to your next big launch. A shared place
+            to plan, build, and make it happen.
           </p>
           <div className="story-points">
             <span>
@@ -69,6 +69,10 @@ export function AuthPage({ returnTo }: { returnTo: string }) {
           </div>
         </div>
         <span className="story-footer">
+          <a href="https://rmitnct.club" target="_blank" rel="noreferrer">
+            rmitnct.club ↗
+          </a>{" "}
+          ·
           <Layers3 size={18} /> Your next chapter starts here.
         </span>
       </section>

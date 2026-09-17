@@ -1,6 +1,9 @@
 import { useEffect, useState, type ReactNode } from "react";
 import {
   CalendarDays,
+  CalendarRange,
+  Users,
+  ArrowUpRight,
   Home,
   LayoutDashboard,
   Menu,
@@ -78,6 +81,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <aside className={menuOpen ? "sidebar open" : "sidebar"}>
         <div className="brand">
           <BrandLogo />
+          <span className="product-label">NCT / PLANNER</span>
         </div>
         <NavLink className="back-workspaces" to="/">
           <ArrowLeft size={14} /> Your workspaces
@@ -102,8 +106,22 @@ export function AppShell({ children }: { children: ReactNode }) {
           <NavLink to={`${base}/board`}>
             <LayoutDashboard /> Sprint board
           </NavLink>
+          <NavLink to={`${base}/calendar`}>
+            <CalendarRange /> Calendar
+          </NavLink>
+          <NavLink to={`${base}/team`}>
+            <Users /> Team workload
+          </NavLink>
         </nav>
         <div className="sidebar-footer">
+          <a
+            className="club-link"
+            href="https://rmitnct.club"
+            target="_blank"
+            rel="noreferrer"
+          >
+            rmitnct.club <ArrowUpRight size={15} />
+          </a>
           <NavLink to={`${base}/settings`}>
             <Settings /> Settings
           </NavLink>

@@ -1,3 +1,4 @@
+import { useSearchParams } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { ChevronDown, Plus, Search, SlidersHorizontal } from "lucide-react";
 import { useWorkspaceMembers } from "../useWorkspaceMembers";
@@ -19,7 +20,15 @@ export function SprintBoard() {
   const { tasks, moveTask } = useTasks();
   const { workspaceMembers } = useWorkspaceMembers(workspaceId);
   const [query, setQuery] = useState("");
-  const [assignee, setAssignee] = useState("all");
+  const [params, setParams] = useSearchParams();
+  const assignee = params.get("assignee") || "all";
+  const setAssignee = (value: string) =>
+    setParams((previous) => {
+      const next = new URLSearchParams(previous);
+      if (value === "all") next.delete("assignee");
+      else next.set("assignee", value);
+      return next;
+    });
   const [range, setRange] = useState("all");
   const [initialStatus, setInitialStatus] = useState<TaskStatus>("todo");
   const start = new Date();
@@ -41,7 +50,10 @@ export function SprintBoard() {
         (task) =>
           task.workspaceId === workspaceId &&
           task.title.toLowerCase().includes(query.toLowerCase()) &&
-          (assignee === "all" || task.assignee?.id === assignee) &&
+          (assignee === "all" ||
+            (assignee === "unassigned"
+              ? !task.assignee?.id
+              : task.assignee?.id === assignee)) &&
           (range === "all" ||
             (new Date(task.dueDate.slice(0, 10) + "T12:00:00").getTime() >=
               weekStart &&
@@ -96,6 +108,7 @@ export function SprintBoard() {
           aria-label="Filter by assignee"
         >
           <option value="all">All assignees</option>
+          <option value="unassigned">Unassigned</option>
           {workspaceMembers.map((member) => (
             <option value={member.id} key={member.id}>
               {member.name}

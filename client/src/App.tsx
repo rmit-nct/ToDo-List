@@ -13,6 +13,8 @@ import HomePage from "./pages/HomePage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { AppShell } from "./components/AppShell";
 import { TodayDashboard } from "./pages/TodayDashboard";
+import { CalendarPage } from "./pages/CalendarPage";
+import { TeamPage } from "./pages/TeamPage";
 import { SprintBoard } from "./pages/SprintBoard";
 import { TaskStoreProvider } from "./taskStore";
 import { WorkspaceProvider } from "./workspace";
@@ -27,6 +29,8 @@ function WorkspaceApp() {
             <Route path="my-tasks" element={<HomePage mine />} />
             <Route path="today" element={<TodayDashboard />} />
             <Route path="board" element={<SprintBoard />} />
+            <Route path="calendar" element={<CalendarPage />} />
+            <Route path="team" element={<TeamPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="home" replace />} />
           </Routes>

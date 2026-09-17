@@ -17,11 +17,13 @@ export function TaskModal({
   workspaceId,
   onClose,
   initialStatus = "todo",
+  initialDate,
 }: {
   task?: Task;
   workspaceId: string;
   onClose: () => void;
   initialStatus?: TaskStatus;
+  initialDate?: string;
 }) {
   const { saveTask, deleteTask } = useTasks();
   const {
@@ -54,11 +56,12 @@ export function TaskModal({
       assigneeId: task?.assignee?.id ?? task?.assignedMemberId ?? "",
       dueDate:
         task?.dueDate?.slice(0, 10) ??
+        initialDate ??
         new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
           .toISOString()
           .slice(0, 10),
     });
-  }, [reset, task, initialStatus]);
+  }, [reset, task, initialStatus, initialDate]);
   useEffect(() => {
     if (!task && !getValues("assigneeId") && currentMember)
       setValue("assigneeId", currentMember.id);
