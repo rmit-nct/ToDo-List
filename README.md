@@ -80,6 +80,8 @@ Browser QA uses an isolated, headless Google Chrome profile. Screenshots go to `
 
 ## Cloudflare deployment
 
+Live URL: https://nct-planner.tuturuuu-e89.workers.dev
+
 The app uses OpenNext on Cloudflare Workers in the **Tuturuuu** account. Deploy only the `ngoc/production-nextauth` branch; do not merge or change `main` as part of deployment.
 
 ```sh

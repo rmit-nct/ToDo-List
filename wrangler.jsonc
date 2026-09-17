@@ -10,6 +10,11 @@
     { "binding": "WORKER_SELF_REFERENCE", "service": "nct-planner" },
   ],
   "observability": { "enabled": true },
+  "workers_dev": true,
+  "preview_urls": false,
   "placement": { "mode": "smart" },
-  "vars": { "MONGODB_DB": "nct-todo-production" },
+  "vars": {
+    "NEXTAUTH_URL": "https://nct-planner.tuturuuu-e89.workers.dev",
+    "MONGODB_DB": "nct-todo-production",
+  },
 }
