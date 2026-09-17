@@ -36,46 +36,6 @@
 .landing-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
-}
-
-.landing-brand-mark {
-  width: 42px;
-  height: 42px;
-
-  display: grid;
-  place-items: center;
-
-  border-radius: 10px;
-
-  background: #8ce7ff;
-  color: #202946;
-
-  font-size: 21px;
-  font-weight: 800;
-
-  box-shadow:
-    0 6px 18px rgba(140, 231, 255, 0.12);
-}
-
-.landing-brand-text {
-  display: flex;
-  align-items: baseline;
-  gap: 7px;
-}
-
-.landing-brand-text strong {
-  color: #ffffff;
-
-  font-size: 20px;
-  font-weight: 800;
-}
-
-.landing-brand-text span {
-  color: #8ce7ff;
-
-  font-size: 14px;
-  font-weight: 600;
 }
 
 
