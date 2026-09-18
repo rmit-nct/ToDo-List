@@ -315,6 +315,49 @@ app.get("/api/workspaces/:workspaceId", async (req, res) => {
 });
 
 
+// --- PATCH /api/workspaces/:workspaceId ---
+// Update an existing workspace
+app.patch("/api/workspaces/:workspaceId", async (req, res) => {
+  try {
+    const { workspaceId } = req.params;
+    const { name } = req.body;
+
+    if (!name || name.trim() === "") {
+      return res.status(400).json({
+        error: "Workspace name is required",
+      });
+    }
+
+    const updatedWorkspace = await Workspace.findOneAndUpdate(
+      {
+        id: workspaceId,
+      },
+      {
+        name: name.trim(),
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    if (!updatedWorkspace) {
+      return res.status(404).json({
+        error: "Workspace not found",
+      });
+    }
+
+    res.json(updatedWorkspace);
+  } catch (error) {
+    console.error("Update workspace error:", error);
+
+    res.status(500).json({
+      error: "Failed to update workspace",
+    });
+  }
+});
+
+
 // --- POST /api/workspaces/:workspaceId/members ---
 // Join an existing workspace
 app.post("/api/workspaces/:workspaceId/members", async (req, res) => {
