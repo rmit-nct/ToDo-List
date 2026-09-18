@@ -6,6 +6,7 @@ export interface TaskStoreValue {
   tasks: Task[];
   error: string | null;
   isLoading: boolean;
+  pendingCount: number;
   clearError: () => void;
 
   saveTask: (task: Task) => Promise<void>;

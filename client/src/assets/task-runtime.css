@@ -18,3 +18,18 @@ dialog.modal-backdrop::backdrop {
   max-height: calc(100dvh - 40px);
   overflow: auto;
 }
+
+.assignment-help { font-size: 12px; font-weight: 400; line-height: 1.5; color: var(--muted); }
+.modal .assign-self { justify-self: start; padding: 6px 0; border: 0; background: transparent; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; font-size: 12px; cursor: pointer; }
+.task-assignment { display: inline-flex; align-items: center; justify-content: end; gap: 7px; max-width: 65%; border: 0; padding: 4px; border-radius: 8px; background: transparent; color: inherit; cursor: pointer; font: inherit; font-size: 12px; }
+.task-assignment > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.task-assignment .avatar { flex-shrink: 0; }
+.task-assignment:focus-visible { outline: 2px solid #4896ac; outline-offset: 2px; }
+.kanban-column.is-drop-target { outline: 2px dashed var(--teal); outline-offset: 4px; background: color-mix(in srgb, var(--teal) 8%, var(--surface)); }
+.column-tasks > .is-dragging { opacity: .45; }
+.column-tasks > [draggable] { cursor: grab; }
+.column-tasks > [draggable]:active { cursor: grabbing; }
+.sync-messages { position: fixed; bottom: 20px; right: 20px; width: min(480px, calc(100% - 40px)); z-index: 12; display: grid; gap: 8px; }
+.sync-messages .api-status { margin: 0; padding: 14px 16px; box-shadow: 0 8px 30px #10172b22; gap: 12px; }
+.sync-messages .api-status button { flex-shrink: 0; min-width: 28px; min-height: 28px; }
+.brand-home-link { text-decoration: none; color: inherit; display: block; }

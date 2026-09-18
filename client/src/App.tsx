@@ -3,9 +3,9 @@ import {
   Navigate,
   Route,
   Routes,
+  useLocation,
 } from 'react-router-dom'
 
-import { UsernamePage } from './pages/UsernamePage'
 import LandingPage from './pages/LandingPage'
 import { MyTasksPage } from './pages/MyTasksPage'
 import HomePage from './pages/HomePage'
@@ -21,11 +21,12 @@ import './assets/app.css'
 import './assets/theme.css'
 
 function WorkspaceApp() {
+  const location = useLocation()
   return (
-    <TaskStoreProvider>
+    <TaskStoreProvider mine={location.pathname.endsWith('/my-tasks')}>
       <AppShell>
         <Routes>
-          <Route path="my-tasks" element={<TaskStoreProvider mine><MyTasksPage /></TaskStoreProvider>} />
+          <Route path="my-tasks" element={<MyTasksPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route
             path="home"
@@ -66,12 +67,12 @@ function App() {
   return (
     <ThemeProvider><BrowserRouter>
       <Routes>
-        <Route path="/account" element={<UsernamePage />} />
-        <Route path="/login" element={<UsernamePage />} />
+        <Route path="/account" element={<AccountPage />} />
+        <Route path="/login" element={<AccountPage />} />
         <Route path="/account/email" element={<AccountPage />} />
         <Route
           path="/"
-          element={<UsernamePage />}
+          element={<AccountPage />}
         />
 
         <Route

@@ -130,3 +130,11 @@ test('username login restores shared workspaces without granting outsiders acces
     assert.equal((await client.get('/api/users/me')).status(), 401);
   } finally { await client.dispose(); await outsider.dispose(); }
 });
+
+test('expired account sessions cannot silently create unowned workspaces', async () => {
+  const client = await request.newContext({ baseURL: base, extraHTTPHeaders: { Origin: base } });
+  try {
+    const response = await client.post('/api/workspaces', { data: { workspaceName: 'Expired', creatorName: 'Owner', requireAccount: true } });
+    assert.equal(response.status(), 401);
+  } finally { await client.dispose(); }
+});

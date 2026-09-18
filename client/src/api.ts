@@ -4,6 +4,10 @@ export function apiFetch(input: RequestInfo | URL, init?: RequestInit) {
   return fetch(input, { ...init, credentials: 'include' })
 }
 
+export class ApiError extends Error {
+  constructor(message: string, public status: number) { super(message) }
+}
+
 export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   if (path === '/auth/logout') {
     const csrfResponse = await apiFetch('/api/username/csrf')
@@ -18,6 +22,6 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
     ...init, headers: { 'Content-Type': 'application/json', ...init?.headers },
   })
   const body = await response.json().catch(() => null)
-  if (!response.ok) throw new Error(body?.error || 'Unable to complete this request. Please try again.')
+  if (!response.ok) throw new ApiError(body?.error || 'Unable to complete this request. Please try again.', response.status)
   return body as T
 }

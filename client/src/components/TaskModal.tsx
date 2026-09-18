@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useTasks } from "../taskStoreContext";
 import { useWorkspaceMembers } from "../useWorkspaceMembers";
 import type { Task, TaskPriority, TaskStatus } from "../types";
@@ -25,10 +25,12 @@ export function TaskModal({
   initialStatus?: TaskStatus;
   initialDate?: string;
 }) {
-  const { saveTask, deleteTask } = useTasks();
+  const { tasks, saveTask, deleteTask } = useTasks();
   const {
     workspaceMembers,
     currentMember,
+    loading: membersLoading,
+    refresh: refreshMembers,
     error: memberError,
   } = useWorkspaceMembers(workspaceId);
   const [requestError, setRequestError] = useState<string | null>(null);
@@ -43,9 +45,9 @@ export function TaskModal({
     register,
     handleSubmit,
     reset,
-    getValues,
+    control,
     setValue,
-    formState: { errors },
+    formState: { errors, dirtyFields },
   } = useForm<FormValues>();
   useEffect(() => {
     reset({
@@ -62,14 +64,17 @@ export function TaskModal({
           .slice(0, 10),
     });
   }, [reset, task, initialStatus, initialDate]);
-  useEffect(() => {
-    if (!task && !getValues("assigneeId") && currentMember)
-      setValue("assigneeId", currentMember.id);
-  }, [currentMember, getValues, setValue, task]);
+  const selectedAssignee = useWatch({ control, name: "assigneeId" });
   const submit = async (values: FormValues) => {
     const assignee = workspaceMembers.find(
       (member) => member.id === values.assigneeId,
     );
+    if (values.assigneeId && !assignee) {
+      setRequestError(
+        "This member is no longer available. Choose another assignee.",
+      );
+      return;
+    }
     if (!currentMember) {
       setRequestError("Sign in as a member of this workspace before saving.");
       return;
@@ -77,18 +82,50 @@ export function TaskModal({
     setBusy(true);
     setRequestError(null);
     try {
-      await saveTask({
+      const latest = tasks.find((item) => item.id === task?.id) ?? task;
+      const operation = saveTask({
         ...values,
+        ...(task && latest
+          ? {
+              title: dirtyFields.title ? values.title : latest.title,
+              description: dirtyFields.description
+                ? values.description
+                : latest.description,
+              status: dirtyFields.status ? values.status : latest.status,
+              priority: dirtyFields.priority
+                ? values.priority
+                : latest.priority,
+            }
+          : {}),
         id: task?.id ?? crypto.randomUUID(),
-        title: values.title.trim(),
-        dueDate: `${values.dueDate}T12:00:00.000Z`,
-        assignee,
-        assignedMemberId: assignee?.id ?? "",
+        title:
+          task && latest && !dirtyFields.title
+            ? latest.title
+            : values.title.trim(),
+        dueDate:
+          task && latest && !dirtyFields.dueDate
+            ? latest.dueDate
+            : `${values.dueDate}T12:00:00.000Z`,
+        assignee:
+          task && latest && !dirtyFields.assigneeId
+            ? latest.assignee
+            : assignee,
+        assignedMemberId:
+          task && latest && !dirtyFields.assigneeId
+            ? latest.assignedMemberId
+            : (assignee?.id ?? ""),
         creator: task?.creator ?? currentMember,
         workspaceId,
         createdAt: task?.createdAt ?? new Date().toISOString(),
       });
-      onClose();
+      if (task) {
+        onClose();
+        // The shared store rolls back and reports failures after the editor closes.
+        void operation.catch(() => undefined);
+      } else {
+        await operation;
+        onClose();
+      }
     } catch (reason) {
       setRequestError(
         reason instanceof Error ? reason.message : "Unable to save task.",
@@ -183,14 +220,38 @@ export function TaskModal({
           </label>
           <label>
             Assignee
-            <select {...register("assigneeId")}>
+            <select
+              aria-label="Assignee"
+              disabled={busy || membersLoading || !!memberError}
+              {...register("assigneeId")}
+            >
               <option value="">Unassigned</option>
               {workspaceMembers.map((member) => (
                 <option key={member.id} value={member.id}>
                   {member.name}
+                  {member.id === currentMember?.id ? " (you)" : ""}
                 </option>
               ))}
             </select>
+            <span className="assignment-help">
+              {membersLoading
+                ? "Loading teammates…"
+                : "Choose a teammate, or leave this task open for anyone."}
+            </span>
+            {currentMember && selectedAssignee !== currentMember.id && (
+              <button
+                className="assign-self"
+                type="button"
+                disabled={busy}
+                onClick={() =>
+                  setValue("assigneeId", currentMember.id, {
+                    shouldDirty: true,
+                  })
+                }
+              >
+                Assign to me
+              </button>
+            )}
           </label>
           <label>
             Due date
@@ -201,6 +262,15 @@ export function TaskModal({
               {requestError ?? memberError}
             </p>
           ) : null}
+          {memberError && (
+            <button
+              type="button"
+              className="secondary"
+              onClick={refreshMembers}
+            >
+              Retry loading members
+            </button>
+          )}
           {!memberError && workspaceMembers.length > 0 && !currentMember ? (
             <p className="request-error">
               Please{" "}
@@ -233,7 +303,9 @@ export function TaskModal({
               <button
                 type="submit"
                 className="primary"
-                disabled={busy || !currentMember}
+                disabled={
+                  busy || membersLoading || !!memberError || !currentMember
+                }
               >
                 {busy ? "Saving..." : task ? "Save changes" : "Create task"}
               </button>

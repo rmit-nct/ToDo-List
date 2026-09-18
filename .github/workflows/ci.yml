@@ -17,6 +17,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run build:cloudflare
+      - run: npx playwright install --with-deps chromium
       - name: Isolated MongoDB integration tests
         run: |
           QA_CLOUDFLARE=1 node scripts/test-server.mjs > /tmp/nct-test-server.log 2>&1 &

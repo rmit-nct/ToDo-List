@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
+import type { Account } from '../auth'
 import { API_BASE_URL, apiFetch } from '../api'
 
 const createWorkspaceSchema = z.object({
@@ -38,7 +39,7 @@ type WorkspaceResponse = {
   }[]
 }
 
-function CreateWorkspaceForm() {
+function CreateWorkspaceForm({ account }: { account?: Account }) {
   const navigate = useNavigate()
 
   const [serverError, setServerError] =
@@ -53,6 +54,7 @@ function CreateWorkspaceForm() {
     formState: { errors },
   } = useForm<CreateWorkspaceFormData>({
     resolver: zodResolver(createWorkspaceSchema),
+    defaultValues: { creatorName: account?.name || '', creatorEmail: account?.email || '' },
   })
 
   const onSubmit = async (
@@ -73,6 +75,7 @@ function CreateWorkspaceForm() {
 
           body: JSON.stringify({
             workspaceName: data.workspaceName,
+            requireAccount: !!account,
             creatorName: data.creatorName,
             creatorEmail:
               data.creatorEmail || undefined,
@@ -158,6 +161,7 @@ function CreateWorkspaceForm() {
         )}
       </label>
 
+      {!account && <>
       <label className="workspace-form-field">
         Your Name
 
@@ -205,6 +209,8 @@ function CreateWorkspaceForm() {
           </span>
         )}
       </label>
+
+      </>}
 
       {serverError && (
         <p className="form-error">

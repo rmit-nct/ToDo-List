@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Check, Copy, LogOut, Monitor, Moon, ShieldCheck, Sun, X } from 'lucide-react'
 import { apiRequest } from '../api'
 import { useTheme } from '../themeContext'
-import type { Account } from './AccountPage'
+import type { Account } from '../auth'
 import './SettingsPage.css'
 
 type Member = { id: string; userId: string; name: string; email: string; role: 'owner' | 'member'; title: string }

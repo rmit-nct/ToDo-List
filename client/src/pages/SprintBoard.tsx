@@ -17,6 +17,8 @@ export function SprintBoard() {
   const { workspaceId = "" } = useParams();
   const { tasks, moveTask } = useTasks();
   const { workspaceMembers } = useWorkspaceMembers(workspaceId);
+  const [dragging, setDragging] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<TaskStatus | null>(null);
   const [query, setQuery] = useState("");
   const [assignee, setAssignee] = useState("all");
   const [initialStatus, setInitialStatus] = useState<TaskStatus>("todo");
@@ -34,8 +36,8 @@ export function SprintBoard() {
           task.title.toLowerCase().includes(query.toLowerCase()) &&
           (assignee === "all" ||
             (assignee === "unassigned"
-              ? !task.assignee?.id
-              : task.assignee?.id === assignee)),
+              ? !(task.assignedMemberId || task.assignee?.id)
+              : (task.assignedMemberId || task.assignee?.id) === assignee)),
       ),
     [tasks, query, assignee, workspaceId],
   );
@@ -102,16 +104,18 @@ export function SprintBoard() {
           const tasksId = `${column.status}-column-tasks`;
           return (
             <div
-              className={`kanban-column${isCollapsed ? " is-collapsed" : ""}`}
+              className={`kanban-column${isCollapsed ? " is-collapsed" : ""}${dropTarget === column.status ? " is-drop-target" : ""}`}
               data-status={column.status}
               key={column.status}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) =>
-                void moveTask(
-                  e.dataTransfer.getData("text/task-id"),
-                  column.status,
-                ).catch(() => undefined)
-              }
+              onDragOver={(event) => { if (dragging) { event.preventDefault(); event.dataTransfer.dropEffect = "move"; setDropTarget(column.status); } }}
+              onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDropTarget(null); }}
+              onDrop={(event) => {
+                event.preventDefault();
+                const id = event.dataTransfer.getData("text/task-id");
+                const task = tasks.find(item => item.id === id);
+                setDragging(null); setDropTarget(null);
+                if (task && task.status !== column.status) void moveTask(id, column.status).catch(() => undefined);
+              }}
             >
               <div className="column-heading">
                 <div>
@@ -133,9 +137,9 @@ export function SprintBoard() {
                 {columnTasks.map((task) => (
                   <div
                     draggable
-                    onDragStart={(e) =>
-                      e.dataTransfer.setData("text/task-id", task.id)
-                    }
+                    className={dragging === task.id ? "is-dragging" : undefined}
+                    onDragStart={(event) => { event.dataTransfer.setData("text/task-id", task.id); event.dataTransfer.effectAllowed = "move"; setDragging(task.id); }}
+                    onDragEnd={() => { setDragging(null); setDropTarget(null); }}
                     key={task.id}
                   >
                     <TaskCard task={task} onOpen={setModalTask} />

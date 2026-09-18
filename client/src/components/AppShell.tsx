@@ -56,7 +56,7 @@ export function AppShell({
   const isWorkspaceManagePage =
   location.pathname.endsWith('/app/workspace')
 
-  const { error, isLoading, clearError } = useTasks()
+  const { error, isLoading, clearError, pendingCount } = useTasks()
 
   const { dark, toggleTheme } = useTheme()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -225,9 +225,9 @@ export function AppShell({
 
   const nav = (
     <>
-      <div className="brand">
+      <Link className="brand brand-home-link" to="/" aria-label="NEO home" onClick={() => setMenuOpen(false)}>
         <BrandLogo />
-      </div>
+      </Link>
 
       <nav aria-label="Main navigation">
         <p className="nav-label">
@@ -415,7 +415,7 @@ export function AppShell({
             )}
           </button>
 
-          <BrandLogo compact />
+          <Link to="/" aria-label="NEO home" onClick={() => setMenuOpen(false)}><BrandLogo compact /></Link>
 
           <button
             type="button"
@@ -468,6 +468,8 @@ export function AppShell({
           </button>
         </div>
 
+        <div className="sync-messages">
+        {pendingCount > 0 && <div className="api-status" role="status">Saving {pendingCount === 1 ? "change" : `${pendingCount} changes`}…</div>}
         {isLoading ? (
           <div
             className="api-status"
@@ -493,6 +495,7 @@ export function AppShell({
           </div>
         ) : null}
 
+        </div>
         {children}
       </main>
     </div>

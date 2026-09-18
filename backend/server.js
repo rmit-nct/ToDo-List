@@ -48,15 +48,16 @@ app.use('/api/tasks', async (req, res, next) => {
   if (workspace.ownerId) {
     if (!req.account || !workspace.members.some(member => member.userId === req.account.id)) return res.status(403).json({ error: 'Join this workspace to access its tasks.' });
     if (req.method === 'DELETE' && workspace.ownerId !== req.account.id && req.existingTask?.creator?.id !== req.account.id) return res.status(403).json({ error: 'Only the creator or workspace owner can delete a task.' });
-    if (['POST', 'PUT'].includes(req.method)) {
-      const assigneeId = req.body.assignedMemberId || req.body.assignee?.id;
-      const assignee = workspace.members.find(member => member.id === assigneeId);
-      if (!assignee) return res.status(400).json({ error: 'Choose a workspace member as assignee.' });
-      const initials = name => name.split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase();
-      req.body.assignee = { id: assignee.id, name: assignee.name, initials: initials(assignee.name), color: '#4896ac' };
-      req.body.assignedMemberId = assignee.id;
-      req.body.creator = req.existingTask?.creator || { id: req.account.id, name: req.account.name, initials: initials(req.account.name), color: '#4896ac' };
-    }
+  }
+  if (['POST', 'PUT'].includes(req.method)) {
+    // An explicit empty ID clears assignment; omitted fields preserve it on edits.
+    const assigneeId = req.body.assignedMemberId ?? req.body.assignee?.id ?? req.existingTask?.assignedMemberId ?? '';
+    const assignee = workspace.members.find(member => member.id === assigneeId);
+    if (typeof assigneeId !== 'string' || (assigneeId && !assignee)) return res.status(400).json({ error: 'Choose a member of this workspace, or leave the task unassigned.' });
+    const initials = name => name.split(/\s+/).filter(Boolean).map(part => part[0]).join('').slice(0, 2).toUpperCase();
+    req.body.assignee = assignee ? { id: assignee.id, name: assignee.name, initials: initials(assignee.name), color: '#4896ac' } : null;
+    req.body.assignedMemberId = assigneeId;
+    if (workspace.ownerId) req.body.creator = req.existingTask?.creator || { id: req.account.id, name: req.account.name, initials: initials(req.account.name), color: '#4896ac' };
   }
   if (req.existingTask && req.body) {
     req.body.workspaceId = workspaceId;
@@ -299,6 +300,7 @@ app.post("/api/members", (req, res) => {
 app.post("/api/workspaces", async (req, res) => {
   try {
     const { workspaceName, creatorName, creatorEmail } = req.body;
+    if (req.body.requireAccount && !req.account) return res.status(401).json({ error: 'Sign in again before creating a workspace.' });
 
     if (!workspaceName || workspaceName.trim() === "") {
       return res.status(400).json({

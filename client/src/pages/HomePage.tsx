@@ -1,412 +1,291 @@
-import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import type {
-  Task,
-  TaskStatus,
-  TaskPriority,
-  TeamMember,
-} from "../types";
-import { API_BASE_URL, apiFetch } from "../api";
+import { useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { Plus, Users, Search } from "lucide-react";
 import { useTasks } from "../taskStoreContext";
+import { useWorkspaceMembers } from "../useWorkspaceMembers";
+import { TaskModal } from "../components/TaskModal";
+import { apiRequest } from "../api";
+import type { Task } from "../types";
 import "./HomePage.css";
 
-type SortOption = "Nearest Deadline" | "Newest";
+const statuses: Record<string, string> = {
+  todo: "To do",
+  "in-progress": "In progress",
+  done: "Done",
+};
 
-function formatDate(date: string): string {
-  return new Intl.DateTimeFormat("en", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(date));
-}
-
-function HomePage() {
-  const { workspaceId } = useParams();
-  const { tasks } = useTasks();
-
-  // --- Real data, now starts empty and gets filled by apiFetch() ---
-  const [members, setMembers] = useState<TeamMember[]>([]);
-
-  // --- Loading and error state, now meaningful since a real network call can fail ---
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // --- Search/filter/sort state, unchanged ---
+export default function HomePage() {
+  const { workspaceId = "" } = useParams();
+  const { tasks, isLoading, error } = useTasks();
+  const {
+    workspaceMembers,
+    workspaceInfo,
+    currentMember,
+    error: memberError,
+    refresh,
+  } = useWorkspaceMembers(workspaceId);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] =
-    useState<TaskStatus | "All">("All");
-  const [priorityFilter, setPriorityFilter] =
-    useState<TaskPriority | "All">("All");
-  const [sortBy, setSortBy] =
-    useState<SortOption>("Nearest Deadline");
-
-  // --- Add member form state, unchanged ---
-  const [newName, setNewName] = useState("");
-  const [newEmail, setNewEmail] = useState("");
-
-  // useEffect runs code automatically when the component first appears on screen.
-  // The empty array [] at the end means "only run this once, not on every re-render."
-  useEffect(() => {
-    async function loadData() {
-      if (!workspaceId) {
-        setError("Workspace ID is missing.");
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        const workspaceRes = await apiFetch(
-          `${API_BASE_URL}/api/workspaces/${workspaceId}`
-        );
-
-        if (!workspaceRes.ok) {
-          const errorData = await workspaceRes.json();
-
-          throw new Error(
-            errorData.error || "Failed to load workspace."
-          );
-        }
-
-        const workspaceData = await workspaceRes.json();
-
-        setMembers(workspaceData.members ?? []);
-      } catch (err) {
-        console.error("HomePage load error:", err);
-
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("Failed to load workspace.");
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    loadData();
-  }, [workspaceId]);
-
-  const normalizeStatus = (status: TaskStatus) => {
-    return status;
-  };
-
-  const normalizePriority = (
-    priority: TaskPriority
-  ) => {
-    return priority.toLowerCase();
-  };
-
-  const filteredTasks = tasks.filter((task) => {
-    const matchesSearch = task.title
-      .toLowerCase()
-      .includes(search.toLowerCase());
-
-    const matchesStatus =
-      statusFilter === "All" ||
-      normalizeStatus(task.status) ===
-        normalizeStatus(statusFilter);
-
-    const matchesPriority =
-      priorityFilter === "All" ||
-      normalizePriority(task.priority) ===
-        normalizePriority(priorityFilter);
-
-    return (
-      matchesSearch &&
-      matchesStatus &&
-      matchesPriority
+  const [status, setStatus] = useState("all");
+  const [assignee, setAssignee] = useState("all");
+  const [priority, setPriority] = useState("all");
+  const [sort, setSort] = useState("due");
+  const [selected, setSelected] = useState<Task | null | undefined>();
+  const [memberBusy, setMemberBusy] = useState(false);
+  const [memberFailure, setMemberFailure] = useState("");
+  const visible = tasks
+    .filter(
+      (task) =>
+        task.title.toLowerCase().includes(search.toLowerCase()) &&
+        (status === "all" || status === task.status) &&
+        (priority === "all" || priority === task.priority) &&
+        (assignee === "all" ||
+          (task.assignedMemberId || task.assignee?.id || "") === assignee),
+    )
+    .sort((a, b) =>
+      sort === "due"
+        ? a.dueDate.localeCompare(b.dueDate)
+        : (b.createdAt || "").localeCompare(a.createdAt || ""),
     );
-  });
-
-  const sortedTasks = [...filteredTasks].sort(
-    (a, b) => {
-      if (sortBy === "Nearest Deadline") {
-        return (
-          new Date(a.dueDate).getTime() -
-          new Date(b.dueDate).getTime()
-        );
-      }
-
-      return (
-        new Date(b.createdAt ?? 0).getTime() -
-        new Date(a.createdAt ?? 0).getTime()
-      );
-    }
-  );
-
-  function getTaskMemberName(
-    task: Task
-  ): string {
-    if (task.assignee?.name) {
-      return task.assignee.name;
-    }
-
-    if (task.assignedMemberId) {
-      const member = members.find(
-        (member) =>
-          member.id === task.assignedMemberId
-      );
-
-      return member
-        ? member.name
-        : "Unassigned";
-    }
-
-    return "Unassigned";
-  }
-
-  // Now actually calls the real backend instead of just updating local state
-  async function handleAddMember(
-    e: React.FormEvent
-  ) {
-    e.preventDefault();
-
-    if (
-      newName.trim() === "" ||
-      !workspaceId
-    ) {
-      return;
-    }
-
-    try {
-      const res = await apiFetch(
-        `${API_BASE_URL}/api/workspaces/${workspaceId}/members`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-          body: JSON.stringify({
-            name: newName,
-            email:
-              newEmail.trim() === ""
-                ? undefined
-                : newEmail,
-          }),
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error(
-          "Failed to add member."
-        );
-      }
-
-      const createdMember =
-        await res.json();
-
-      setMembers([
-        ...members,
-        createdMember,
-      ]);
-
-      setNewName("");
-      setNewEmail("");
-    } catch {
-      setError(
-        "Could not add member. Try again."
-      );
-    }
-  }
-
+  const filtered =
+    search || status !== "all" || assignee !== "all" || priority !== "all";
   return (
-    <div className="homepage">
-      <h1>Homepage</h1>
-
-      <div className="controls">
-        <label
-          htmlFor="search-input"
-          className="visually-hidden"
+    <div className="workspace-overview">
+      <header className="overview-heading">
+        <div>
+          <p className="overview-eyebrow">WORKSPACE OVERVIEW</p>
+          <h1>Team tasks</h1>
+          <p>Plan the work. Give every task a clear owner.</p>
+        </div>
+        <button
+          className="primary"
+          disabled={!currentMember}
+          onClick={() => setSelected(null)}
         >
-          Search tasks by title
-        </label>
-
-        <input
-          id="search-input"
-          type="text"
-          placeholder="Search by title..."
-          value={search}
-          onChange={(e) =>
-            setSearch(e.target.value)
-          }
-        />
-
-        <select
-          value={statusFilter}
-          onChange={(e) =>
-            setStatusFilter(
-              e.target.value as
-                | TaskStatus
-                | "All"
-            )
-          }
-        >
-          <option value="All">
-            All Statuses
-          </option>
-          <option value="todo">
-            To Do
-          </option>
-          <option value="in-progress">
-            In Progress
-          </option>
-          <option value="done">
-            Done
-          </option>
-        </select>
-
-        <select
-          value={priorityFilter}
-          onChange={(e) =>
-            setPriorityFilter(
-              e.target.value as
-                | TaskPriority
-                | "All"
-            )
-          }
-        >
-          <option value="All">
-            All Priorities
-          </option>
-          <option value="low">
-            Low
-          </option>
-          <option value="medium">
-            Medium
-          </option>
-          <option value="high">
-            High
-          </option>
-        </select>
-
-        <select
-          value={sortBy}
-          onChange={(e) =>
-            setSortBy(
-              e.target.value as SortOption
-            )
-          }
-        >
-          <option value="Nearest Deadline">
-            Sort: Nearest Deadline
-          </option>
-          <option value="Newest">
-            Sort: Newest
-          </option>
-        </select>
-      </div>
-
-      {/* Loading, error, empty, or filled — in that priority order */}
-      {isLoading ? (
-        <p className="status-message">
-          Loading tasks...
-        </p>
-      ) : error ? (
-        <p
-          className="status-message"
-          style={{ color: "#e53935" }}
-        >
-          {error}
-        </p>
-      ) : sortedTasks.length === 0 ? (
-        <p className="status-message">
-          No tasks match your filters.
-        </p>
-      ) : (
-        <ul className="task-list">
-          {sortedTasks.map((task) => (
-            <li
-              key={task.id}
-              className="task-card"
-            >
-              <span className="task-title">
-                {task.title}
-              </span>
-
-              <span
-                className={`task-status status-${normalizeStatus(
-                  task.status
-                )}`}
-              >
-                {task.status}
-              </span>
-
-              <span
-                className={`task-priority priority-${normalizePriority(
-                  task.priority
-                )}`}
-              >
-                {task.priority}
-              </span>
-
-              <span className="task-due">
-                {formatDate(
-                  task.dueDate
-                )}
-              </span>
-
-              <span className="task-assignee">
-                {getTaskMemberName(
-                  task
-                )}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <form
-        className="member-form"
-        onSubmit={handleAddMember}
-      >
-        <label
-          htmlFor="member-name"
-          className="visually-hidden"
-        >
-          Member name
-        </label>
-
-        <input
-          id="member-name"
-          type="text"
-          placeholder="Name"
-          value={newName}
-          onChange={(e) =>
-            setNewName(
-              e.target.value
-            )
-          }
-        />
-
-        <label
-          htmlFor="member-email"
-          className="visually-hidden"
-        >
-          Member email (optional)
-        </label>
-
-        <input
-          id="member-email"
-          type="email"
-          placeholder="Email (optional)"
-          value={newEmail}
-          onChange={(e) =>
-            setNewEmail(
-              e.target.value
-            )
-          }
-        />
-
-        <button type="submit">
-          Add Member
+          <Plus size={18} /> New task
         </button>
-      </form>
+      </header>
+      <div className="overview-summary">
+        <span>
+          <strong>
+            {tasks.filter((task) => task.status !== "done").length}
+          </strong>{" "}
+          open tasks
+        </span>
+        <span>
+          <strong>
+            {
+              tasks.filter(
+                (task) => !task.assignedMemberId && !task.assignee?.id,
+              ).length
+            }
+          </strong>{" "}
+          unassigned
+        </span>
+        <span>
+          <Users size={16} /> {workspaceMembers.length} teammates
+        </span>
+        <Link to={`/workspace/${workspaceId}/app/settings`}>
+          Invite teammates
+        </Link>
+      </div>
+      <section className="overview-filters" aria-label="Filter team tasks">
+        <label className="overview-search">
+          <Search size={18} />
+          <input
+            aria-label="Search tasks"
+            placeholder="Search tasks…"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+        </label>
+        <select
+          aria-label="Filter by assignee"
+          value={assignee}
+          onChange={(event) => setAssignee(event.target.value)}
+        >
+          <option value="all">All assignees</option>
+          <option value="">Unassigned</option>
+          {workspaceMembers.map((member) => (
+            <option key={member.id} value={member.id}>
+              {member.name}
+              {member.id === currentMember?.id ? " (you)" : ""}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Filter by status"
+          value={status}
+          onChange={(event) => setStatus(event.target.value)}
+        >
+          <option value="all">All statuses</option>
+          {Object.entries(statuses).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Filter by priority"
+          value={priority}
+          onChange={(event) => setPriority(event.target.value)}
+        >
+          <option value="all">All priorities</option>
+          {["low", "medium", "high"].map((value) => (
+            <option key={value} value={value}>
+              {value}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Sort tasks"
+          value={sort}
+          onChange={(event) => setSort(event.target.value)}
+        >
+          <option value="due">Due date</option>
+          <option value="new">Newest first</option>
+        </select>
+      </section>
+      {isLoading ? (
+        <p role="status">Loading tasks…</p>
+      ) : (error && tasks.length === 0) || memberError ? (
+        <div role="alert">
+          <p>{error || memberError}</p>
+          <button
+            className="secondary"
+            onClick={() => window.location.reload()}
+          >
+            Retry
+          </button>
+        </div>
+      ) : visible.length === 0 ? (
+        <div className="overview-empty">
+          <h2>
+            {filtered ? "No matching tasks" : "Your next project starts here"}
+          </h2>
+          <p>
+            {filtered
+              ? "Try another assignee or clear the filters to see your team’s work."
+              : "Create your first task, then assign it to yourself or a teammate."}
+          </p>
+          {filtered ? (
+            <button
+              className="secondary"
+              onClick={() => {
+                setSearch("");
+                setStatus("all");
+                setAssignee("all");
+                setPriority("all");
+              }}
+            >
+              Clear filters
+            </button>
+          ) : (
+            <button
+              className="primary"
+              disabled={!currentMember}
+              onClick={() => setSelected(null)}
+            >
+              Create first task
+            </button>
+          )}
+        </div>
+      ) : (
+        <>
+          <p className="overview-result-count" role="status">
+            {visible.length} of {tasks.length} tasks
+          </p>
+          <ul className="overview-task-list">
+            {visible.map((task) => {
+              const member = workspaceMembers.find(
+                (item) =>
+                  item.id === (task.assignedMemberId || task.assignee?.id),
+              );
+              const name = member?.name || task.assignee?.name || "Unassigned";
+              return (
+                <li key={task.id}>
+                  <button
+                    className="overview-task"
+                    aria-label={`Edit ${task.title}`}
+                    onClick={() => setSelected(task)}
+                  >
+                    <span className={`overview-status-dot ${task.status}`} />
+                    <span className="overview-task-title">
+                      <strong>{task.title}</strong>
+                      <small>{statuses[task.status]}</small>
+                    </span>
+                    <span className={`priority ${task.priority}`}>
+                      {task.priority}
+                    </span>
+                    <span className="overview-assignee">
+                      <span className="overview-initials" aria-hidden="true">
+                        {member?.initials || "—"}
+                      </span>
+                      {name}
+                    </span>
+                    <time dateTime={task.dueDate}>
+                      {new Date(
+                        task.dueDate.slice(0, 10) + "T12:00:00",
+                      ).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </time>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
+      {!workspaceInfo.ownerId && currentMember && (
+        <form
+          className="overview-legacy-members"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            const form = event.currentTarget;
+            const fields = Object.fromEntries(new FormData(form));
+            setMemberBusy(true);
+            setMemberFailure("");
+            try {
+              await apiRequest(`/workspaces/${workspaceId}/members`, {
+                method: "POST",
+                body: JSON.stringify(fields),
+              });
+              form.reset();
+              refresh();
+            } catch (reason) {
+              setMemberFailure(
+                reason instanceof Error
+                  ? reason.message
+                  : "Unable to add member.",
+              );
+            } finally {
+              setMemberBusy(false);
+            }
+          }}
+        >
+          <h2>Add a workspace member</h2>
+          <label>
+            Name
+            <input name="name" required maxLength={80} />
+          </label>
+          <label>
+            Email (optional)
+            <input name="email" type="email" />
+          </label>
+          <button className="secondary" disabled={memberBusy}>
+            Add member
+          </button>
+          {memberFailure && <p role="alert">{memberFailure}</p>}
+        </form>
+      )}
+      {selected !== undefined && (
+        <TaskModal
+          task={selected || undefined}
+          workspaceId={workspaceId}
+          onClose={() => setSelected(undefined)}
+        />
+      )}
     </div>
   );
 }
-
-export default HomePage;

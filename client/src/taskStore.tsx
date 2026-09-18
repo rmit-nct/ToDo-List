@@ -1,23 +1,14 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 import { useParams } from "react-router-dom";
-import { API_BASE_URL } from "./api";
-import type { Task } from "./types";
+import { apiRequest } from "./api";
 import { TaskStore, type TaskStoreValue } from "./taskStoreContext";
+import { OptimisticTasks } from "./optimisticTasks";
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}/api${path}`, {
-    ...options,
-    headers: { "Content-Type": "application/json", ...options?.headers },
-  });
-  const body = await response.json().catch(() => null);
-  if (!response.ok)
-    throw new Error(
-      body?.error ??
-        body?.message ??
-        "Unable to save changes. Please try again.",
-    );
-  return body as T;
-}
 export function TaskStoreProvider({
   children,
   mine = false,
@@ -26,38 +17,28 @@ export function TaskStoreProvider({
   mine?: boolean;
 }) {
   const { workspaceId } = useParams();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const version = useRef(0);
+  return <TaskStoreScope key={`${workspaceId || 'all'}:${mine}`} workspaceId={workspaceId} mine={mine}>{children}</TaskStoreScope>;
+}
+
+function TaskStoreScope({ children, workspaceId, mine }: { children: ReactNode; workspaceId?: string; mine: boolean }) {
+  // Keying this scope prevents the previous workspace’s cache from leaking.
+  const store = useMemo(() => new OptimisticTasks(apiRequest), []);
+  const state = useSyncExternalStore(
+    store.subscribe,
+    store.getSnapshot,
+    store.getSnapshot,
+  );
   useEffect(() => {
     const controller = new AbortController();
     if (!workspaceId && !mine) return;
     const refresh = () => {
-      const revision = version.current;
-      request<Task[]>(
+      void store.refresh(
         mine
           ? "/users/me/tasks"
           : `/tasks?${new URLSearchParams({ workspaceId: workspaceId! })}`,
-        {
-          signal: controller.signal,
-        },
-      )
-        .then((items) => {
-          if (!controller.signal.aborted && revision === version.current) {
-            setTasks(items);
-            setError(null);
-          }
-        })
-        .catch(() => {
-          if (!controller.signal.aborted)
-            setError(
-              "Unable to load tasks. Check your connection and try again.",
-            );
-        })
-        .finally(() => {
-          if (!controller.signal.aborted) setIsLoading(false);
-        });
+        controller.signal,
+        mine,
+      );
     };
     refresh();
     const onFocus = () => {
@@ -70,62 +51,17 @@ export function TaskStoreProvider({
       clearInterval(timer);
       window.removeEventListener("focus", onFocus);
     };
-  }, [workspaceId, mine]);
-  const value = useMemo<TaskStoreValue>(() => {
-    const perform = async <T,>(operation: () => Promise<T>) => {
-      try {
-        version.current++;
-        const result = await operation();
-        version.current++;
-        setError(null);
-        return result;
-      } catch (reason) {
-        setError(
-          reason instanceof Error ? reason.message : "Unable to save changes.",
-        );
-        throw reason;
-      }
-    };
-    return {
-      tasks,
-      error,
-      isLoading,
-      clearError: () => setError(null),
-      saveTask: async (task) =>
-        perform(async () => {
-          const exists = tasks.some((item) => item.id === task.id);
-          const saved = await request<Task>(
-            exists ? `/tasks/${task.id}` : "/tasks",
-            {
-              method: exists ? "PUT" : "POST",
-              body: JSON.stringify({
-                ...task,
-                workspaceId: task.workspaceId ?? workspaceId,
-              }),
-            },
-          );
-          setTasks((current) =>
-            exists
-              ? current.map((item) => (item.id === saved.id ? saved : item))
-              : [saved, ...current],
-          );
-        }),
-      deleteTask: async (id) =>
-        perform(async () => {
-          await request(`/tasks/${id}`, { method: "DELETE", body: "{}" });
-          setTasks((current) => current.filter((task) => task.id !== id));
-        }),
-      moveTask: async (id, status) =>
-        perform(async () => {
-          const saved = await request<Task>(`/tasks/${id}/status`, {
-            method: "PATCH",
-            body: JSON.stringify({ status }),
-          });
-          setTasks((current) =>
-            current.map((task) => (task.id === id ? saved : task)),
-          );
-        }),
-    };
-  }, [tasks, workspaceId, error, isLoading]);
+  }, [store, workspaceId, mine]);
+  const value = useMemo<TaskStoreValue>(
+    () => ({
+      ...state,
+      clearError: store.clearError,
+      saveTask: (task) =>
+        store.save({ ...task, workspaceId: task.workspaceId ?? workspaceId }),
+      deleteTask: store.remove,
+      moveTask: store.move,
+    }),
+    [state, store, workspaceId],
+  );
   return <TaskStore.Provider value={value}>{children}</TaskStore.Provider>;
 }

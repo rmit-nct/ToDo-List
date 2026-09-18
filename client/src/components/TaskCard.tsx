@@ -221,9 +221,10 @@ export function TaskCard({
           {dateLabel(task.dueDate)}
         </span>
 
-        <span className="avatar" title={assigneeName} data-member={assigneeId}>
-          {assigneeInitials}
-        </span>
+        <button type="button" className="task-assignment" aria-label={`Assign ${task.title}: ${assigneeName}`} onClick={(event) => { event.stopPropagation(); onOpen(task); }}>
+          <span className="avatar" aria-hidden="true" data-member={assigneeId}>{assigneeInitials}</span>
+          <span>{assigneeName}</span>
+        </button>
       </footer>
     </article>
   );
