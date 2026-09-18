@@ -1,3 +1,4 @@
+import { SkeletonLine } from "./LoadingSkeleton";
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { useForm, useWatch } from "react-hook-form";
@@ -220,7 +221,7 @@ export function TaskModal({
           </label>
           <label>
             Assignee
-            <select
+            {membersLoading ? <span className="skeleton-field-loader" role="status" aria-label="Loading teammates"><SkeletonLine className="skeleton-field" /></span> : <select
               aria-label="Assignee"
               disabled={busy || membersLoading || !!memberError}
               {...register("assigneeId")}
@@ -232,12 +233,10 @@ export function TaskModal({
                   {member.id === currentMember?.id ? " (you)" : ""}
                 </option>
               ))}
-            </select>
-            <span className="assignment-help">
-              {membersLoading
-                ? "Loading teammates…"
-                : "Choose a teammate, or leave this task open for anyone."}
-            </span>
+            </select>}
+            {!membersLoading && <span className="assignment-help">
+              Choose a teammate, or leave this task open for anyone.
+            </span>}
             {currentMember && selectedAssignee !== currentMember.id && (
               <button
                 className="assign-self"

@@ -1,6 +1,8 @@
+import { WorkspaceActions } from "../components/WorkspaceActions";
+import { LoadingSkeleton, SkeletonLine } from "../components/LoadingSkeleton";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Plus, Users, Search } from "lucide-react";
+import { Users, Search } from "lucide-react";
 import { useTasks } from "../taskStoreContext";
 import { useWorkspaceMembers } from "../useWorkspaceMembers";
 import { TaskModal } from "../components/TaskModal";
@@ -56,15 +58,9 @@ export default function HomePage() {
           <h1>Team tasks</h1>
           <p>Plan the work. Give every task a clear owner.</p>
         </div>
-        <button
-          className="primary"
-          disabled={!currentMember}
-          onClick={() => setSelected(null)}
-        >
-          <Plus size={18} /> New task
-        </button>
+        <WorkspaceActions createDisabled={!currentMember} onCreate={() => setSelected(null)} />
       </header>
-      <div className="overview-summary">
+      {isLoading ? <div className="overview-summary" aria-hidden="true"><SkeletonLine width="120px" /><SkeletonLine width="100px" /><SkeletonLine width="100px" /></div> : <div className="overview-summary">
         <span>
           <strong>
             {tasks.filter((task) => task.status !== "done").length}
@@ -87,7 +83,8 @@ export default function HomePage() {
         <Link to={`/workspace/${workspaceId}/app/settings`}>
           Invite teammates
         </Link>
-      </div>
+      </div>}
+
       <section className="overview-filters" aria-label="Filter team tasks">
         <label className="overview-search">
           <Search size={18} />
@@ -146,7 +143,7 @@ export default function HomePage() {
         </select>
       </section>
       {isLoading ? (
-        <p role="status">Loading tasks…</p>
+        <LoadingSkeleton label="Loading tasks" />
       ) : (error && tasks.length === 0) || memberError ? (
         <div role="alert">
           <p>{error || memberError}</p>

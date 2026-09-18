@@ -1,3 +1,4 @@
+import { LoadingSkeleton } from "../components/LoadingSkeleton";
 import { useEffect, useState, type FormEvent } from "react";
 import {
   Link,
@@ -10,7 +11,9 @@ import { ApiError, apiRequest } from "../api";
 import { BrandLogo } from "../components/BrandLogo";
 import CreateWorkspaceForm from "../components/CreateWorkspaceForm";
 import { useTheme } from "../themeContext";
+import { LandingPromo } from "../components/LandingPromo";
 import "./SettingsPage.css";
+import "./AccountWelcome.css";
 
 import { signInWithUsername, type Account } from "../auth";
 type WorkspaceSummary = {
@@ -119,7 +122,8 @@ export function AccountPage() {
     navigate(`/workspace/${workspace.id}/app/today`);
   }
   return (
-    <main className="account-page">
+    <main className={`account-page${!account ? " account-welcome" : ""}`}>
+      {!account && <LandingPromo />}
       <header className="account-header">
         <Link to="/" aria-label="NEO home">
           <BrandLogo />
@@ -131,7 +135,7 @@ export function AccountPage() {
       </header>
       <div className="account-content">
         {loading ? (
-          <p role="status">Loading your account…</p>
+          <LoadingSkeleton variant="account" label="Loading your account" />
         ) : account ? (
           <>
             <div className="account-title">
@@ -206,11 +210,11 @@ export function AccountPage() {
         ) : (
           <section className="settings-panel account-form">
             <p className="settings-eyebrow">YOUR TEAM. ONE BOARD.</p>
-            <h1>
+            <h2>
               {method === "email" && register
                 ? "Create your account"
                 : "Welcome back"}
-            </h1>
+            </h2>
             <p>Sign in to manage your profile and workspace preferences.</p>
             <div className="account-tabs" aria-label="Sign-in method">
               <button

@@ -1,3 +1,5 @@
+import { WorkspaceActions } from "../components/WorkspaceActions";
+import { LoadingSkeleton } from "../components/LoadingSkeleton";
 import { useMemo, useState } from "react";
 import { ChevronDown, Plus, Search, SlidersHorizontal } from "lucide-react";
 import { useWorkspaceMembers } from "../useWorkspaceMembers";
@@ -15,7 +17,7 @@ const columns: { status: TaskStatus; title: string; color: string }[] = [
 
 export function SprintBoard() {
   const { workspaceId = "" } = useParams();
-  const { tasks, moveTask } = useTasks();
+  const { tasks, moveTask, isLoading } = useTasks();
   const { workspaceMembers } = useWorkspaceMembers(workspaceId);
   const [dragging, setDragging] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<TaskStatus | null>(null);
@@ -56,17 +58,10 @@ export function SprintBoard() {
           <h1>Weekly Sprint Board</h1>
           <span>Plan, share ownership, and keep work moving.</span>
         </div>
-        <div className="board-actions">
-          <button
-            className="primary"
-            onClick={() => {
-              setInitialStatus("todo");
-              setModalTask(null);
-            }}
-          >
-            <Plus /> New task
-          </button>
-        </div>
+        <WorkspaceActions createDisabled={isLoading} onCreate={() => {
+          setInitialStatus("todo");
+          setModalTask(null);
+        }} />
       </div>
       <section className="filters board-filters">
         <div className="search">
@@ -95,7 +90,7 @@ export function SprintBoard() {
           ))}
         </select>
       </section>
-      <section className="kanban" aria-label="Weekly sprint board">
+      {isLoading ? <LoadingSkeleton variant="board" label="Loading board" /> : <section className="kanban" aria-label="Weekly sprint board">
         {columns.map((column) => {
           const columnTasks = filtered.filter(
             (task) => task.status === column.status,
@@ -159,7 +154,7 @@ export function SprintBoard() {
             </div>
           );
         })}
-      </section>
+      </section>}
       {modalTask !== undefined ? (
         <TaskModal
           initialStatus={initialStatus}

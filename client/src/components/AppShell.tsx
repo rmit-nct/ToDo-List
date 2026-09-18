@@ -1,3 +1,4 @@
+import { SkeletonLine } from "./LoadingSkeleton"
 import { useTheme } from '../themeContext'
 import { API_BASE_URL, apiFetch } from '../api'
 import { useTasks } from '../taskStoreContext'
@@ -16,7 +17,6 @@ import {
   MoreHorizontal,
   Moon,
   Settings,
-  Share2,
   SlidersHorizontal,
   Sun,
   UserRoundCheck,
@@ -53,10 +53,8 @@ export function AppShell({
   const navigate = useNavigate()
   const location = useLocation()
 
-  const isWorkspaceManagePage =
-  location.pathname.endsWith('/app/workspace')
 
-  const { error, isLoading, clearError, pendingCount } = useTasks()
+  const { error, clearError, pendingCount } = useTasks()
 
   const { dark, toggleTheme } = useTheme()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -67,7 +65,8 @@ export function AppShell({
   const [workspaceMenuOpen, setWorkspaceMenuOpen] =
     useState(false)
 
-  const [copied, setCopied] = useState(false)
+
+  const [identityLoading, setIdentityLoading] = useState(true)
 
   const [workspace, setWorkspace] =
     useState<WorkspaceData | null>(null)
@@ -76,8 +75,9 @@ export function AppShell({
     useState<MemberIdentity | null>(null)
 
   useEffect(() => {
+    setIdentityLoading(true)
     if (!workspaceId) {
-      apiFetch(`${API_BASE_URL}/api/users/me`).then(response => response.ok ? response.json() : null).then(setMember).catch(() => setMember(null))
+      apiFetch(`${API_BASE_URL}/api/users/me`).then(response => response.ok ? response.json() : null).then(setMember).catch(() => setMember(null)).finally(() => setIdentityLoading(false))
       setWorkspace(null)
       return
     }
@@ -126,7 +126,7 @@ export function AppShell({
       }
     }
 
-    loadWorkspace()
+    void loadWorkspace().finally(() => setIdentityLoading(false))
   }, [workspaceId])
 
   useEffect(() => {
@@ -170,32 +170,6 @@ export function AppShell({
   }, [])
 
   useEffect(() => { setMenuOpen(false); setWorkspaceMenuOpen(false) }, [location.pathname])
-
-  const handleShareWorkspace = async () => {
-    if (!workspaceId) {
-      return
-    }
-
-    const shareUrl =
-      `${window.location.origin}/workspace/${workspaceId}`
-
-    try {
-      await navigator.clipboard.writeText(
-        shareUrl
-      )
-
-      setCopied(true)
-
-      window.setTimeout(() => {
-        setCopied(false)
-      }, 2000)
-    } catch (error) {
-      console.error(
-        'Failed to copy workspace link:',
-        error
-      )
-    }
-  }
 
   const handleManageWorkspace = () => {
     if (!workspaceId) {
@@ -251,6 +225,7 @@ export function AppShell({
             <button
               type="button"
               className="workspace-main-button"
+              aria-label={workspace?.name || "Workspace"}
               onClick={() =>
                 setWorkspaceOpen(
                   (value) => !value
@@ -265,8 +240,7 @@ export function AppShell({
               </span>
 
               <span className="workspace-name">
-                {workspace?.name ??
-                  'Loading workspace...'}
+                {workspace?.name ?? (identityLoading ? <SkeletonLine width="85px" /> : "Workspace unavailable")}
               </span>
             </button>
 
@@ -347,7 +321,7 @@ export function AppShell({
       <div className="sidebar-footer">
         <NavLink className="profile account-settings-link" aria-label="Account settings" to={workspaceId ? `/workspace/${workspaceId}/app/settings` : "/account"} onClick={() => setMenuOpen(false)}>
           <span className="avatar" aria-hidden="true">{getInitials(member?.name)}</span>
-          <div><strong>{member?.name ?? 'Your account'}</strong><small>Account &amp; settings</small></div>
+          <div><strong>{!member && identityLoading ? <SkeletonLine width="100px" /> : member?.name ?? 'Your account'}</strong><small>Account &amp; settings</small></div>
           <Settings aria-hidden="true" />
         </NavLink>
       </div>
@@ -416,52 +390,9 @@ export function AppShell({
           </button>
         </header>
 
-        <div className="top-actions">
-          {workspaceId && !isWorkspaceManagePage ? (
-            <button
-              type="button"
-              className="share-workspace-button"
-              onClick={
-                handleShareWorkspace
-              }
-            >
-              <Share2 />
-
-              {copied
-                ? 'Link Copied!'
-                : 'Share Workspace'}
-            </button>
-          ) : null}
-
-          <button
-            type="button"
-            className="theme-toggle"
-            onClick={() =>
-              toggleTheme()
-            }
-          >
-            {dark ? (
-              <Sun />
-            ) : (
-              <Moon />
-            )}
-
-            {dark
-              ? 'Light'
-              : 'Dark'}
-          </button>
-        </div>
-
         <div className="sync-messages">
         {pendingCount > 0 && <div className="api-status" role="status">Saving {pendingCount === 1 ? "change" : `${pendingCount} changes`}…</div>}
-        {isLoading ? (
-          <div
-            className="api-status"
-            role="status"
-          >
-            Loading tasks...
-          </div>
-        ) : null}
+
 
         {error ? (
           <div

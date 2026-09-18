@@ -1,0 +1,28 @@
+.skeleton-shape { display: block; height: 12px; max-width: 100%; min-width: 0; border-radius: 6px; background: color-mix(in srgb, var(--ink, #202946) 12%, transparent); animation: skeleton-pulse 1.6s ease-in-out infinite; }
+.loading-skeleton { width: 100%; min-width: 0; padding: 8px 0; }
+.skeleton-content { display: grid; gap: 12px; }
+.skeleton-panel { min-width: 0; padding: 22px; border: 1px solid var(--line, #c5d5e7); border-radius: 12px; background: var(--surface, white); display: grid; align-content: start; gap: 20px; }
+.skeleton-task-row { display: flex; gap: 16px; align-items: center; min-height: 36px; }
+.skeleton-task-row > div { flex: 1; display: grid; gap: 12px; }
+.skeleton-avatar { height: 32px; flex-shrink: 0; border-radius: 50%; }
+.skeleton-title { height: 24px; }
+.skeleton-field { height: 44px; }
+.skeleton-card { height: 132px; }
+.skeleton-heading { display: grid; gap: 18px; margin-bottom: 28px; }
+.loading-skeleton--board .skeleton-content { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.loading-skeleton--dashboard .skeleton-content { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.skeleton-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 24px; }
+.loading-skeleton--account { max-width: 440px; margin: auto; }
+.loading-skeleton--boot { min-height: 100dvh; padding: clamp(24px, 6vw, 80px); background: var(--canvas, #e3edf9); }
+.loading-skeleton--boot > div { max-width: 1000px; margin: auto; }
+.skeleton-inline { display: inline-block; vertical-align: middle; }
+.skeleton-field-loader { display: grid; align-items: center; height: 44px; }
+@keyframes skeleton-pulse { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .skeleton-shape { animation: none; } }
+@media (max-width: 760px) {
+  .loading-skeleton--board .skeleton-content { grid-template-columns: repeat(3, minmax(220px, 1fr)); }
+  .loading-skeleton--board { overflow: hidden; }
+  .loading-skeleton--dashboard .skeleton-content { grid-template-columns: 1fr; }
+  .skeleton-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .skeleton-panel { padding: 18px; }
+}

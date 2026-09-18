@@ -124,6 +124,21 @@ test('assignment, optimistic editing and dragging reconcile with saved data and 
     await page.goto(`/workspace/${team.id}/app/home`);
     assert.ok(await page.title());
     await expect(page.getByRole('heading', { name: 'Team tasks' })).toBeVisible();
+    for (const width of [1440, 390, 320]) {
+      await page.setViewportSize({ width, height: 1000 });
+      const controls = page.locator('.workspace-actions button');
+      await expect(controls).toHaveCount(3);
+      const boxes = await controls.evaluateAll(elements => elements.map(el => {
+        const { x, y, width, height } = el.getBoundingClientRect();
+        return { x, y, width, height };
+      }));
+      assert.ok(boxes.every(box => Math.abs(box.y - boxes[0].y) < 1), `Actions share one row at ${width}`);
+      assert.ok(boxes[2].x + boxes[2].width <= width, `Actions fit at ${width}`);
+      assert.ok(boxes[0].x + boxes[0].width < boxes[1].x);
+      if (width < 760) await expect.poll(async () => (await page.locator('.sidebar').boundingBox())!.x).toBeLessThan(-250);
+      await page.screenshot({ path: `/tmp/nct-actions-${width}.png`, animations: 'disabled' });
+    }
+    await page.setViewportSize({ width: 1440, height: 1000 });
     await page.getByRole('button', { name: 'New task', exact: true }).click();
     await page.getByLabel('Title', { exact: true }).fill('Ship assignment UI');
     await page.getByLabel('Assignee', { exact: true }).selectOption(sam.id);
@@ -250,5 +265,77 @@ test('one account settings entry and accessible theme controls fit desktop and n
     await page.getByRole('link', { name: 'Account settings', exact: true }).click();
     await expect(page.locator('.sidebar')).not.toHaveClass(/open/);
     assert.deepEqual(errors, []);
+  } finally { await browser.close(); }
+});
+
+test('shared sign-in preserves the original welcome design without narrow-screen overflow', async () => {
+  const browser = await chromium.launch();
+  const page = await browser.newPage({ baseURL: base, viewport: { width: 1440, height: 1000 } });
+  try {
+    await page.goto('/account');
+    await expect(page.getByRole('heading', { name: 'Your team. One board.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Stay organized' })).toBeVisible();
+    await expect(page.getByLabel('Username', { exact: true })).toBeVisible();
+    await page.screenshot({ path: '/tmp/nct-welcome-desktop.png', animations: 'disabled' });
+    await page.getByRole('button', { name: 'Email', exact: true }).click();
+    await page.getByRole('button', { name: 'Sign up', exact: true }).click();
+    await expect(page.getByLabel('Display name')).toBeVisible();
+    for (const width of [800, 390, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+      await expect(page.getByRole('heading', { name: 'Your team. One board.' })).toBeVisible();
+      if (width === 390) await page.screenshot({ path: '/tmp/nct-welcome-mobile.png', fullPage: true, animations: 'disabled' });
+    }
+    await page.getByRole('button', { name: 'Dark', exact: true }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.screenshot({ path: '/tmp/nct-welcome-dark.png', animations: 'disabled' });
+  } finally { await browser.close(); }
+});
+
+test('skeletons replace loading text and empty states while data is pending', async () => {
+  const browser = await chromium.launch();
+  const context = await browser.newContext({ baseURL: base, viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+  const page = await context.newPage();
+  try {
+    await context.request.post('/api/auth/register', { headers: { Origin: base }, data: { name: 'Skeleton QA', email: `skeleton-${Date.now()}@example.test`, password: 'TemporaryPassword!123' } });
+    const workspace = await (await context.request.post('/api/workspaces', { headers: { Origin: base }, data: { workspaceName: 'Skeleton QA', creatorName: 'Owner' } })).json();
+    const screens = [
+      ['/account', 'Loading your account'],
+      [`/workspace/${workspace.id}/app/home`, 'Loading tasks'],
+      [`/workspace/${workspace.id}/app/today`, 'Loading dashboard'],
+      [`/workspace/${workspace.id}/app/board`, 'Loading board'],
+      [`/workspace/${workspace.id}/app/my-tasks`, 'Loading your tasks'],
+      [`/workspace/${workspace.id}/app/settings`, 'Loading settings'],
+      [`/workspace/${workspace.id}`, 'Loading workspace'],
+    ];
+    for (const [path, label] of screens) {
+      let release!: () => void;
+      const gate = new Promise<void>(resolve => { release = resolve; });
+      await page.route('**/api/**', async route => { await gate; await route.continue(); });
+      try {
+        await page.goto(path);
+        const skeleton = page.getByRole('status', { name: label, exact: true });
+        await expect(skeleton).toBeVisible();
+        await expect(skeleton).toHaveAttribute('aria-busy', 'true');
+        assert.equal(await skeleton.locator('.skeleton-shape').first().evaluate(el => getComputedStyle(el).animationName), 'none');
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+        await expect(page.getByText('No tasks assigned yet', { exact: true })).toHaveCount(0);
+        if (label === 'Loading settings' || label === 'Loading board') await page.screenshot({ path: `/tmp/nct-skeleton-${label.split(' ')[1]}.png`, animations: 'disabled' });
+      } finally { release(); }
+      await expect(page.getByRole('status', { name: label, exact: true })).toHaveCount(0);
+      await page.unroute('**/api/**');
+    }
+    await page.goto(`/workspace/${workspace.id}/app/home`);
+    await expect(page.getByRole('button', { name: 'New task', exact: true })).toBeEnabled();
+    let releaseMembers!: () => void;
+    const membersGate = new Promise<void>(resolve => { releaseMembers = resolve; });
+    await page.route(`**/api/workspaces/${workspace.id}`, async route => { await membersGate; await route.continue(); });
+    await page.getByRole('button', { name: 'New task', exact: true }).click();
+    try {
+      await expect(page.getByRole('status', { name: 'Loading teammates', exact: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Create task', exact: true })).toBeDisabled();
+    } finally { releaseMembers(); }
+    await expect(page.getByLabel('Assignee', { exact: true })).toBeVisible();
   } finally { await browser.close(); }
 });

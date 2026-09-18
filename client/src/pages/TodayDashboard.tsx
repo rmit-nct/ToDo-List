@@ -1,3 +1,5 @@
+import { WorkspaceActions } from "../components/WorkspaceActions";
+import { LoadingSkeleton } from "../components/LoadingSkeleton";
 import { useParams } from "react-router-dom";
 import { useWorkspaceMembers } from "../useWorkspaceMembers";
 import { useMemo, useState } from "react";
@@ -5,7 +7,6 @@ import {
   CheckCircle2,
   CircleAlert,
   Clock3,
-  Plus,
   Search,
   SlidersHorizontal,
 } from "lucide-react";
@@ -22,7 +23,7 @@ const dayStart = (date: Date) =>
 export function TodayDashboard() {
   const { workspaceId = "" } = useParams();
 
-  const { tasks } = useTasks();
+  const { tasks, isLoading } = useTasks();
 
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
@@ -88,6 +89,8 @@ export function TodayDashboard() {
     .format(new Date())
     .toUpperCase();
 
+  if (isLoading) return <div className="page"><div className="page-heading"><h1>Today Dashboard</h1><WorkspaceActions createDisabled onCreate={() => setModalTask(null)} /></div><LoadingSkeleton variant="dashboard" label="Loading dashboard" /></div>;
+
   return (
     <div className="page">
       <div className="page-heading">
@@ -101,10 +104,7 @@ export function TodayDashboard() {
           </span>
         </div>
 
-        <button className="primary" onClick={() => setModalTask(null)}>
-          <Plus />
-          New task
-        </button>
+        <WorkspaceActions createDisabled={!currentMember} onCreate={() => setModalTask(null)} />
       </div>
 
       <section className="stats-grid" aria-label="Task summary">

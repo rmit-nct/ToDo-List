@@ -1,3 +1,4 @@
+import { LoadingSkeleton } from "../components/LoadingSkeleton";
 import {
   useEffect,
   useState,
@@ -202,7 +203,7 @@ export function WorkspaceManagePage() {
   if (isLoading) {
     return (
       <div className="page">
-        <p>Loading workspace...</p>
+        <LoadingSkeleton variant="settings" label="Loading workspace" />
       </div>
     )
   }
