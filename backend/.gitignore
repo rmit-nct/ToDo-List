@@ -1,3 +1,5 @@
 node_modules/
 .env
 .mongodb-data/
+.settings-key
+.mongodb-settings-data/

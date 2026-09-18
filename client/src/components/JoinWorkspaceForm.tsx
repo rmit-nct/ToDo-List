@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
 import { joinWorkspaceSchema } from '../schemas/workspaceSchema'
-import { API_BASE_URL } from '../api'
+import { API_BASE_URL, apiFetch } from '../api'
 
 type JoinWorkspaceFormData = z.infer<typeof joinWorkspaceSchema>
 
@@ -44,7 +44,7 @@ function JoinWorkspaceForm({
       setIsSubmitting(true)
       setServerError(null)
 
-      const response = await fetch(
+      const response = await apiFetch(
         `${API_BASE_URL}/api/workspaces/${workspaceId}/members`,
         {
           method: 'POST',

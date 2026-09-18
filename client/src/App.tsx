@@ -6,20 +6,26 @@ import {
 } from 'react-router-dom'
 
 import LandingPage from './pages/LandingPage'
+import { MyTasksPage } from './pages/MyTasksPage'
 import HomePage from './pages/HomePage'
 import { AppShell } from './components/AppShell'
 import { TodayDashboard } from './pages/TodayDashboard'
 import { SprintBoard } from './pages/SprintBoard'
-import { WorkspaceManagePage } from './pages/WorkspaceManagePage'
 import { TaskStoreProvider } from './taskStore'
 
+import { ThemeProvider } from './theme'
+import { SettingsPage } from './pages/SettingsPage'
+import { AccountPage } from './pages/AccountPage'
 import './assets/app.css'
+import './assets/theme.css'
 
 function WorkspaceApp() {
   return (
     <TaskStoreProvider>
       <AppShell>
         <Routes>
+          <Route path="my-tasks" element={<TaskStoreProvider mine><MyTasksPage /></TaskStoreProvider>} />
+          <Route path="settings" element={<SettingsPage />} />
           <Route
             path="home"
             element={<HomePage />}
@@ -37,7 +43,7 @@ function WorkspaceApp() {
 
           <Route
             path="workspace"
-            element={<WorkspaceManagePage />}
+            element={<SettingsPage />}
           />
 
           <Route
@@ -57,8 +63,9 @@ function WorkspaceApp() {
 
 function App() {
   return (
-    <BrowserRouter>
+    <ThemeProvider><BrowserRouter>
       <Routes>
+        <Route path="/account" element={<AccountPage />} />
         <Route
           path="/"
           element={<LandingPage />}
@@ -66,7 +73,7 @@ function App() {
 
         <Route
           path="/tasks"
-          element={<HomePage />}
+          element={<TaskStoreProvider mine><AppShell><MyTasksPage /></AppShell></TaskStoreProvider>}
         />
 
         <Route
@@ -79,7 +86,7 @@ function App() {
           element={<WorkspaceApp />}
         />
       </Routes>
-    </BrowserRouter>
+    </BrowserRouter></ThemeProvider>
   )
 }
 

@@ -6,7 +6,7 @@ import type {
   TaskPriority,
   TeamMember,
 } from "../types";
-import { API_BASE_URL } from "../api";
+import { API_BASE_URL, apiFetch } from "../api";
 import { useTasks } from "../taskStoreContext";
 import "./HomePage.css";
 
@@ -24,7 +24,7 @@ function HomePage() {
   const { workspaceId } = useParams();
   const { tasks } = useTasks();
 
-  // --- Real data, now starts empty and gets filled by fetch() ---
+  // --- Real data, now starts empty and gets filled by apiFetch() ---
   const [members, setMembers] = useState<TeamMember[]>([]);
 
   // --- Loading and error state, now meaningful since a real network call can fail ---
@@ -58,7 +58,7 @@ function HomePage() {
         setIsLoading(true);
         setError(null);
 
-        const workspaceRes = await fetch(
+        const workspaceRes = await apiFetch(
           `${API_BASE_URL}/api/workspaces/${workspaceId}`
         );
 
@@ -172,7 +172,7 @@ function HomePage() {
     }
 
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `${API_BASE_URL}/api/workspaces/${workspaceId}/members`,
         {
           method: "POST",

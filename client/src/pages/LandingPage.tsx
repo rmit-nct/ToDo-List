@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   ListChecks,
   Users,
@@ -10,7 +10,7 @@ import {
 
 import JoinWorkspaceForm from '../components/JoinWorkspaceForm'
 import CreateWorkspaceForm from '../components/CreateWorkspaceForm'
-import { API_BASE_URL } from '../api'
+import { API_BASE_URL, apiFetch } from '../api'
 
 import './LandingPage.css'
 import { BrandLogo } from '../components/BrandLogo'
@@ -36,7 +36,7 @@ function LandingPage() {
 
     const checkWorkspace = async () => {
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           `${API_BASE_URL}/api/workspaces/${workspaceId}`
         )
 
@@ -51,6 +51,12 @@ function LandingPage() {
           )
         }
 
+        const workspace = await response.json()
+        if (workspace.ownerId) {
+          const member = workspace.members.find((item: { id: string }) => item.id === workspace.currentMemberId)
+          setHasJoined(!!member)
+          if (member) localStorage.setItem(`memberIdentity:${workspaceId}`, JSON.stringify(member))
+        }
         setWorkspaceExists(true)
       } catch (error) {
         console.error(
@@ -203,6 +209,7 @@ function LandingPage() {
                   </p>
                 </div>
 
+                <p className="settings-entry-link"><Link to={`/account?returnTo=${encodeURIComponent(`/workspace/${workspaceId}`)}`}>Sign in to your account</Link> before joining an account-backed workspace.</p>
                 <JoinWorkspaceForm
                   workspaceId={workspaceId}
                   onJoined={() =>
@@ -221,6 +228,7 @@ function LandingPage() {
                 </p>
               </div>
 
+              <p className="settings-entry-link"><Link to="/account">Sign in or create an account</Link> to manage your profile and workspace security.</p>
               <CreateWorkspaceForm />
             </>
           )}
