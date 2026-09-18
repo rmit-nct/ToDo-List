@@ -9,10 +9,12 @@ import { API_BASE_URL, apiFetch } from '../api'
 const createWorkspaceSchema = z.object({
   workspaceName: z
     .string()
+    .trim()
     .min(1, 'Workspace name is required'),
 
   creatorName: z
     .string()
+    .trim()
     .min(1, 'Your name is required'),
 
   creatorEmail: z
@@ -38,8 +40,10 @@ type WorkspaceResponse = {
 
 function CreateWorkspaceForm() {
   const navigate = useNavigate()
+
   const [serverError, setServerError] =
     useState<string | null>(null)
+
   const [isSubmitting, setIsSubmitting] =
     useState(false)
 
@@ -88,7 +92,8 @@ function CreateWorkspaceForm() {
       const workspace =
         result as WorkspaceResponse
 
-      const creator = workspace.members[0]
+      const creator =
+        workspace.members[0]
 
       if (!creator) {
         throw new Error(
@@ -117,10 +122,17 @@ function CreateWorkspaceForm() {
     }
   }
 
+  const onInvalid = () => {
+    setServerError(null)
+  }
+
   return (
     <form
       className="workspace-form"
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={handleSubmit(
+        onSubmit,
+        onInvalid
+      )}
     >
       <label className="workspace-form-field">
         Workspace Name
@@ -128,19 +140,23 @@ function CreateWorkspaceForm() {
         <input
           type="text"
           placeholder="e.g. Human Resource Team"
-          aria-invalid={errors.workspaceName ? 'true' : 'false'}
-          {...register('workspaceName')}
+          aria-invalid={
+            errors.workspaceName
+              ? 'true'
+              : 'false'
+          }
+          {...register('workspaceName', {
+            onChange: () =>
+              setServerError(null),
+          })}
         />
+
         {errors.workspaceName && (
-          <span className="form-error">{errors.workspaceName.message}</span>
+          <span className="form-error">
+            {errors.workspaceName.message}
+          </span>
         )}
       </label>
-
-      {errors.workspaceName && (
-        <p className="form-error">
-          {errors.workspaceName.message}
-        </p>
-      )}
 
       <label className="workspace-form-field">
         Your Name
@@ -148,15 +164,23 @@ function CreateWorkspaceForm() {
         <input
           type="text"
           placeholder="Your name"
-          {...register('creatorName')}
+          aria-invalid={
+            errors.creatorName
+              ? 'true'
+              : 'false'
+          }
+          {...register('creatorName', {
+            onChange: () =>
+              setServerError(null),
+          })}
         />
-      </label>
 
-      {errors.creatorName && (
-        <p className="form-error">
-          {errors.creatorName.message}
-        </p>
-      )}
+        {errors.creatorName && (
+          <span className="form-error">
+            {errors.creatorName.message}
+          </span>
+        )}
+      </label>
 
       <label className="workspace-form-field">
         Email (optional)
@@ -164,18 +188,23 @@ function CreateWorkspaceForm() {
         <input
           type="email"
           placeholder="you@example.com"
-          {...register('creatorEmail')}
+          aria-invalid={
+            errors.creatorEmail
+              ? 'true'
+              : 'false'
+          }
+          {...register('creatorEmail', {
+            onChange: () =>
+              setServerError(null),
+          })}
         />
+
         {errors.creatorEmail && (
-          <span className="form-error">{errors.creatorEmail.message}</span>
+          <span className="form-error">
+            {errors.creatorEmail.message}
+          </span>
         )}
       </label>
-
-      {errors.creatorEmail && (
-        <p className="form-error">
-          {errors.creatorEmail.message}
-        </p>
-      )}
 
       {serverError && (
         <p className="form-error">
