@@ -7,6 +7,9 @@ import type { Task } from './types'
 
 export interface TaskStoreValue {
   tasks: Task[]
+  error: string | null
+  isLoading: boolean
+  clearError: () => void
 
   saveTask: (
     task: Task

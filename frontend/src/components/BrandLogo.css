@@ -1,0 +1,51 @@
+.neo-logo {
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+  max-width: 240px;
+  min-width: 0;
+  line-height: 0;
+}
+
+.neo-logo .neo-logo__image {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.neo-logo .neo-logo__image--dark {
+  display: none;
+}
+
+.theme-dark .neo-logo--on-dark .neo-logo__image--light {
+  display: none;
+}
+
+.theme-dark .neo-logo--on-dark .neo-logo__image--dark {
+  display: block;
+}
+
+.neo-logo--compact {
+  width: 36px;
+  flex: 0 0 36px;
+}
+
+.neo-logo .neo-logo__lockup {
+  display: grid;
+  grid-template-columns: 24% minmax(0, 1fr);
+  align-items: center;
+  gap: 6%;
+  aspect-ratio: 480 / 104;
+}
+.neo-logo__symbol, .neo-logo__wordmark {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+}
+.neo-logo__symbol { aspect-ratio: 112 / 98; }
+.neo-logo__wordmark { aspect-ratio: 333 / 43; }
+.neo-logo .neo-logo__lockup.neo-logo__image--dark,
+.theme-dark .neo-logo--on-dark .neo-logo__lockup.neo-logo__image--light { display: none; }
+.theme-dark .neo-logo--on-dark .neo-logo__lockup.neo-logo__image--dark { display: grid; }
+.neo-logo--compact .neo-logo__image { height: 36px; object-fit: contain; }
