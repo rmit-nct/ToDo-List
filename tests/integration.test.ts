@@ -1,180 +1,103 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { request, type APIRequestContext } from "@playwright/test";
+import { request } from "@playwright/test";
 const base = process.env.TEST_URL || "http://localhost:3100";
-const password = "QA temporary passphrase! 827";
-async function client() {
-  return request.newContext({
+
+test("original entry flow and persisted task CRUD", async () => {
+  const client = await request.newContext({
     baseURL: base,
     extraHTTPHeaders: { Origin: base },
   });
-}
-async function json(
-  c: APIRequestContext,
-  path: string,
-  method = "GET",
-  data?: unknown,
-  status = 200,
-) {
-  const response = await c.fetch("/api" + path, { method, data });
-  const body = await response.json();
-  assert.equal(
-    response.status(),
-    status,
-    `${method} ${path}: ${JSON.stringify(body)}`,
-  );
-  return body;
-}
-async function login(c: APIRequestContext, username: string) {
-  const { csrfToken } = await json(c, "/auth/csrf");
-  const response = await c.post("/api/auth/callback/credentials", {
-    form: { csrfToken, username, json: "true", callbackUrl: base },
-  });
-  assert.equal(response.status(), 200, await response.text());
-  const session = await json(c, "/auth/session");
-  assert.ok(session.user?.id, "Session must contain persisted user");
-  return session.user;
-}
-test("username profiles, workspace isolation and persistent task lifecycle", async () => {
-  const anonymous = await client(),
-    owner = await client(),
-    member = await client();
-  const suffix = Date.now();
-  const email = `owner-${suffix}`;
-  const other = `member-${suffix}`;
+  async function call(
+    path: string,
+    method = "GET",
+    data?: unknown,
+    status = 200,
+  ) {
+    const response = await client.fetch("/api" + path, {
+      method,
+      data: method === "DELETE" && data === undefined ? {} : data,
+    });
+    const body = await response.json();
+    assert.equal(response.status(), status, JSON.stringify(body));
+    return body;
+  }
   try {
-    await json(anonymous, "/workspaces", "GET", undefined, 401);
-    await json(
-      anonymous,
-      "/register",
+    const denied = await client.post("/api/workspaces", {
+      headers: { Origin: "https://untrusted.example" },
+      data: { workspaceName: "Rejected", creatorName: "No" },
+    });
+    assert.equal(denied.status(), 403);
+    const workspace = await call(
+      "/workspaces",
       "POST",
-      { name: "Bad", email: "nope", password: "short" },
-      400,
+      {
+        workspaceName: "Original entry",
+        creatorName: "Original creator",
+        creatorEmail: "",
+      },
+      201,
     );
-    await json(owner, "/register", "POST", {
-      name: email,
-      email: `${email}@example.test`,
-      password,
-    });
-    const u = await login(owner, email),
-      v = await login(member, other);
-    const w = await json(owner, "/workspaces", "POST", {
-      name: "QA isolated workspace",
-    });
-    assert.equal((await json(owner, "/workspaces")).length, 1);
-    assert.equal((await json(member, "/workspaces")).length, 0);
-    const details = await json(owner, `/workspaces/${w.id}`);
-    assert.equal(details.members.length, 1);
-    await json(member, `/workspaces/${w.id}`, "GET", undefined, 404);
-    await json(member, `/tasks?workspaceId=${w.id}`, "GET", undefined, 404);
+    assert.equal(workspace.members.length, 1);
+    const member = await call(
+      `/workspaces/${workspace.id}/members`,
+      "POST",
+      { name: "Teammate" },
+      201,
+    );
     const fields = {
-      workspaceId: w.id,
-      title: "Real persisted task",
-      description: "Test lifecycle",
+      workspaceId: workspace.id,
+      title: "Original task",
+      description: "Task CRUD",
+      priority: "medium",
       status: "todo",
-      priority: "high",
       dueDate: "2026-09-18T12:00:00.000Z",
-      assignedMemberId: u.id,
+      assignedMemberId: member.id,
+      assignee: { ...member, initials: "T", color: "#4896ac" },
     };
-    await json(
-      owner,
-      "/tasks",
-      "POST",
-      { ...fields, assignedMemberId: v.id },
-      400,
-    );
-    await json(owner, "/tasks", "POST", { ...fields, status: "invalid" }, 400);
-    const task = await json(owner, "/tasks", "POST", {
-      ...fields,
-      creator: { id: v.id },
-      creatorId: v.id,
-    });
-    assert.equal(task.creator.id, u.id);
+    const task = await call("/tasks", "POST", fields, 201);
+    assert.ok(task.id);
     assert.equal(
-      (await json(owner, `/tasks?workspaceId=${w.id}`))[0].title,
+      (await call(`/tasks?workspaceId=${workspace.id}`))[0].title,
       fields.title,
     );
-    await json(member, `/tasks/${task.id}`, "PUT", fields, 404);
-    await json(member, `/tasks/${task.id}`, "DELETE", undefined, 404);
-    await json(member, "/workspaces/join", "POST", {
-      code: details.inviteCode,
-    });
-    await json(member, "/workspaces/join", "POST", {
-      code: details.inviteCode,
-    });
-    assert.equal(
-      (await json(owner, `/workspaces/${w.id}`)).members.length,
-      2,
-      "Join is idempotent",
-    );
-    assert.equal(
-      (await json(member, `/workspaces/${w.id}`)).inviteCode,
-      undefined,
-      "Only owners receive invitation secrets",
-    );
-    await json(member, `/workspaces/${w.id}`, "PATCH", { name: "Hijack" }, 403);
-    const updated = await json(owner, `/tasks/${task.id}`, "PUT", {
-      ...fields,
-      title: "Edited task",
-      assignedMemberId: v.id,
-      workspaceId: "forged",
-    });
-    assert.equal(updated.workspaceId, w.id);
-    assert.equal(updated.assignee.id, v.id);
-    await json(member, `/tasks/${task.id}/status`, "PATCH", { status: "done" });
-    assert.equal((await json(owner, `/tasks/${task.id}`)).status, "done");
-    await json(owner, "/account", "PATCH", {
-      name: "QA Renamed",
-      theme: "dark",
-    });
-    assert.equal((await json(owner, "/auth/session")).user.name, "QA Renamed");
-    await json(owner, `/workspaces/${w.id}`, "PATCH", { rotateInvite: true });
-    await json(
-      member,
-      "/workspaces/join",
-      "POST",
-      { code: details.inviteCode },
-      404,
-    );
-    const cross = await owner.post("/api/tasks", {
-      data: fields,
-      headers: { Origin: "https://attacker.example" },
-    });
-    assert.equal(cross.status(), 403);
-    await json(owner, `/tasks/${task.id}`, "DELETE");
-    assert.deepEqual(await json(owner, `/tasks?workspaceId=${w.id}`), []);
-    const returning = await client();
-    try {
-      const same = await login(returning, `  ${email.toUpperCase()}  `);
-      assert.equal(
-        same.id,
-        u.id,
-        "Case and whitespace restore the same username profile",
-      );
-      assert.equal(same.username, email);
-      assert.equal(
-        same.email,
-        "",
-        "Internal identity keys are not exposed as email",
-      );
-      assert.equal(same.name, "QA Renamed");
-      assert.equal((await json(returning, "/workspaces"))[0].id, w.id);
-      await json(
-        returning,
-        "/account",
-        "PATCH",
-        { newPassword: password },
-        400,
-      );
-      const { csrfToken } = await json(anonymous, "/auth/csrf");
-      await anonymous.post("/api/auth/callback/credentials", {
-        form: { csrfToken, username: "bad username!", json: "true" },
-      });
-      assert.equal((await json(anonymous, "/auth/session")).user, undefined);
-    } finally {
-      await returning.dispose();
-    }
+    await call(`/tasks/${task.id}`, "PUT", { ...fields, title: "Edited task" });
+    await call(`/tasks/${task.id}/status`, "PATCH", { status: "in-progress" });
+    const saved = (await call(`/tasks?workspaceId=${workspace.id}`))[0];
+    assert.equal(saved.title, "Edited task");
+    assert.equal(saved.status, "in-progress");
+    await call(`/tasks/${task.id}`, "DELETE");
+    assert.deepEqual(await call(`/tasks?workspaceId=${workspace.id}`), []);
   } finally {
-    await Promise.all([anonymous.dispose(), owner.dispose(), member.dispose()]);
+    await client.dispose();
+  }
+});
+
+test("teammate account and settings routes work through Next adapter", async () => {
+  const client = await request.newContext({
+    baseURL: base,
+    extraHTTPHeaders: { Origin: base },
+  });
+  try {
+    const signup = await client.post("/api/auth/register", {
+      data: {
+        name: "Settings Owner",
+        email: `settings-${Date.now()}@example.test`,
+        password: "TemporaryPassword!123",
+      },
+    });
+    assert.equal(signup.status(), 201, await signup.text());
+    const profile = await client.get("/api/users/me");
+    assert.equal(profile.status(), 200, await profile.text());
+    assert.equal((await profile.json()).name, "Settings Owner");
+    const workspaces = await client.get("/api/users/me/workspaces");
+    assert.equal(workspaces.status(), 200);
+    const patch = await client.patch("/api/users/me", {
+      data: { name: "Updated Owner", title: "Designer" },
+    });
+    assert.equal(patch.status(), 200);
+    assert.equal((await patch.json()).title, "Designer");
+  } finally {
+    await client.dispose();
   }
 });

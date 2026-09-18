@@ -14,6 +14,7 @@ if (worker) {
 MONGODB_DB=nct-isolated-qa
 NEXTAUTH_SECRET=${randomBytes(32).toString("hex")}
 NEXTAUTH_URL=http://localhost:3100
+APP_ORIGINS=http://localhost:3100,http://nct-todo.ttr.gg
 `,
     { mode: 0o600, flag: "wx" },
   );
@@ -42,6 +43,7 @@ const child = spawn(
       MONGODB_DB: "nct-isolated-qa",
       NEXTAUTH_SECRET: randomBytes(32).toString("hex"),
       NEXTAUTH_URL: "http://localhost:3100",
+      APP_ORIGINS: "http://localhost:3100",
     },
   },
 );

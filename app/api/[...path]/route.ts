@@ -1,31 +1,12 @@
-import { withDatabase } from "../../../backend/db";
-import { handle } from "../../../backend/service";
-import { HttpError } from "../../../backend/security";
-import { ZodError } from "zod";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-async function route(
-  request: Request,
-  context: { params: Promise<{ path: string[] }> },
-) {
+async function route(request: Request) {
   try {
-    const path = (await context.params).path;
-    const result = await withDatabase(() => handle(request, path));
-    return Response.json(result, { headers: { "Cache-Control": "no-store" } });
+    // MongoDB and Mongoose initialize inside the Worker request context.
+    const { handleRequest } = await import("../../backend-handler");
+    return await handleRequest(request);
   } catch (error) {
-    if (error instanceof HttpError)
-      return Response.json({ error: error.message }, { status: error.status });
-    if (error instanceof ZodError)
-      return Response.json(
-        {
-          error: error.issues
-            .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
-            .join("; "),
-        },
-        { status: 400 },
-      );
     console.error("API request failed", {
-      path: new URL(request.url).pathname,
       type: error instanceof Error ? error.name : "UnknownError",
     });
     return Response.json(

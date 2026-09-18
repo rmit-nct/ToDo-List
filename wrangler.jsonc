@@ -2,7 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "nct-planner",
   "account_id": "cd77f63702c0be69f64eef36e02563a3",
-  "main": ".open-next/worker.js",
+  "main": "worker.ts",
   "compatibility_date": "2026-09-17",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
@@ -22,6 +22,7 @@
   "placement": { "mode": "smart" },
   "vars": {
     "NEXTAUTH_URL": "https://nct-todo.ttr.gg",
+    "APP_ORIGINS": "https://nct-todo.ttr.gg",
     "MONGODB_DB": "nct-todo-production",
   },
 }

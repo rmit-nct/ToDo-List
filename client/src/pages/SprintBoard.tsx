@@ -1,8 +1,7 @@
-import { useSearchParams } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { ChevronDown, Plus, Search, SlidersHorizontal } from "lucide-react";
 import { useWorkspaceMembers } from "../useWorkspaceMembers";
-import { useWorkspace } from "../workspaceContext";
+import { useParams } from "react-router-dom";
 import { TaskCard } from "../components/TaskCard";
 import { TaskModal } from "../components/TaskModal";
 import { useTasks } from "../taskStoreContext";
@@ -15,29 +14,12 @@ const columns: { status: TaskStatus; title: string; color: string }[] = [
 ];
 
 export function SprintBoard() {
-  const { workspace } = useWorkspace();
-  const workspaceId = workspace.id;
+  const { workspaceId = "" } = useParams();
   const { tasks, moveTask } = useTasks();
   const { workspaceMembers } = useWorkspaceMembers(workspaceId);
   const [query, setQuery] = useState("");
-  const [params, setParams] = useSearchParams();
-  const assignee = params.get("assignee") || "all";
-  const setAssignee = (value: string) =>
-    setParams((previous) => {
-      const next = new URLSearchParams(previous);
-      if (value === "all") next.delete("assignee");
-      else next.set("assignee", value);
-      return next;
-    });
-  const [range, setRange] = useState("all");
+  const [assignee, setAssignee] = useState("all");
   const [initialStatus, setInitialStatus] = useState<TaskStatus>("todo");
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
-  const end = new Date(start);
-  end.setDate(end.getDate() + 7);
-  const weekStart = start.getTime();
-  const weekEnd = end.getTime();
   const [modalTask, setModalTask] = useState<Task | null | undefined>(
     undefined,
   );
@@ -53,14 +35,9 @@ export function SprintBoard() {
           (assignee === "all" ||
             (assignee === "unassigned"
               ? !task.assignee?.id
-              : task.assignee?.id === assignee)) &&
-          (range === "all" ||
-            (new Date(task.dueDate.slice(0, 10) + "T12:00:00").getTime() >=
-              weekStart &&
-              new Date(task.dueDate.slice(0, 10) + "T12:00:00").getTime() <
-                weekEnd)),
+              : task.assignee?.id === assignee)),
       ),
-    [tasks, query, assignee, workspaceId, range, weekStart, weekEnd],
+    [tasks, query, assignee, workspaceId],
   );
   const toggleColumn = (status: TaskStatus) =>
     setCollapsedColumns((current) => {
@@ -114,14 +91,6 @@ export function SprintBoard() {
               {member.name}
             </option>
           ))}
-        </select>
-        <select
-          aria-label="Task date range"
-          value={range}
-          onChange={(e) => setRange(e.target.value)}
-        >
-          <option value="all">All dates</option>
-          <option value="week">This week</option>
         </select>
       </section>
       <section className="kanban" aria-label="Weekly sprint board">

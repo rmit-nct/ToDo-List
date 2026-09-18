@@ -1,4 +1,5 @@
-import { useSession } from "next-auth/react";
+import { useParams } from "react-router-dom";
+import { useWorkspaceMembers } from "../useWorkspaceMembers";
 import { useMemo, useState } from "react";
 import {
   CheckCircle2,
@@ -8,7 +9,7 @@ import {
   Search,
   SlidersHorizontal,
 } from "lucide-react";
-import { useWorkspace } from "../workspaceContext";
+
 
 import { TaskCard } from "../components/TaskCard";
 import { TaskModal } from "../components/TaskModal";
@@ -19,8 +20,7 @@ const dayStart = (date: Date) =>
   new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
 
 export function TodayDashboard() {
-  const { workspace } = useWorkspace();
-  const workspaceId = workspace.id;
+  const { workspaceId = "" } = useParams();
 
   const { tasks } = useTasks();
 
@@ -31,8 +31,8 @@ export function TodayDashboard() {
     undefined,
   );
 
-  const { data: session } = useSession();
-  const memberName = session?.user?.name ?? "";
+  const { currentMember } = useWorkspaceMembers(workspaceId);
+  const memberName = currentMember?.name ?? "";
 
   const workspaceTasks = tasks.filter(
     (task) => task.workspaceId === workspaceId,
@@ -220,14 +220,6 @@ export function TodayDashboard() {
         </select>
       </section>
 
-      <TaskGroup
-        title="High priority"
-        tone="yellow"
-        tasks={filtered.filter(
-          (task) => task.priority === "high" && task.status !== "done",
-        )}
-        onOpen={setModalTask}
-      />
       <TaskGroup
         title="Overdue"
         tone="coral"

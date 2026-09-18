@@ -18,7 +18,13 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     );
   return body as T;
 }
-export function TaskStoreProvider({ children }: { children: ReactNode }) {
+export function TaskStoreProvider({
+  children,
+  mine = false,
+}: {
+  children: ReactNode;
+  mine?: boolean;
+}) {
   const { workspaceId } = useParams();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -26,12 +32,17 @@ export function TaskStoreProvider({ children }: { children: ReactNode }) {
   const version = useRef(0);
   useEffect(() => {
     const controller = new AbortController();
-    if (!workspaceId) return;
+    if (!workspaceId && !mine) return;
     const refresh = () => {
       const revision = version.current;
-      request<Task[]>(`/tasks?${new URLSearchParams({ workspaceId })}`, {
-        signal: controller.signal,
-      })
+      request<Task[]>(
+        mine
+          ? "/users/me/tasks"
+          : `/tasks?${new URLSearchParams({ workspaceId: workspaceId! })}`,
+        {
+          signal: controller.signal,
+        },
+      )
         .then((items) => {
           if (!controller.signal.aborted && revision === version.current) {
             setTasks(items);
@@ -59,7 +70,7 @@ export function TaskStoreProvider({ children }: { children: ReactNode }) {
       clearInterval(timer);
       window.removeEventListener("focus", onFocus);
     };
-  }, [workspaceId]);
+  }, [workspaceId, mine]);
   const value = useMemo<TaskStoreValue>(() => {
     const perform = async <T,>(operation: () => Promise<T>) => {
       try {
@@ -101,7 +112,7 @@ export function TaskStoreProvider({ children }: { children: ReactNode }) {
         }),
       deleteTask: async (id) =>
         perform(async () => {
-          await request(`/tasks/${id}`, { method: "DELETE" });
+          await request(`/tasks/${id}`, { method: "DELETE", body: "{}" });
           setTasks((current) => current.filter((task) => task.id !== id));
         }),
       moveTask: async (id, status) =>
