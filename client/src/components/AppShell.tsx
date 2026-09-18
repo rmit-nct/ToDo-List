@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../api'
+import { useTasks } from '../taskStoreContext'
 
 import {
   useEffect,
@@ -8,19 +9,22 @@ import {
 import {
   CalendarDays,
   ChevronDown,
-  CircleHelp,
   Home,
   LayoutDashboard,
   Menu,
+  MoreHorizontal,
   Moon,
   Settings,
   Share2,
+  SlidersHorizontal,
   Sun,
   UserRoundCheck,
   X,
 } from 'lucide-react'
 import {
   NavLink,
+  useLocation,
+  useNavigate,
   useParams,
 } from 'react-router-dom'
 
@@ -44,11 +48,24 @@ export function AppShell({
   children: ReactNode
 }) {
   const { workspaceId } = useParams()
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  const isWorkspaceManagePage =
+  location.pathname.endsWith('/app/workspace')
+
+  const { error, isLoading, clearError } = useTasks()
 
   const [dark, setDark] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+
   const [workspaceOpen, setWorkspaceOpen] =
     useState(true)
+
+  const [workspaceMenuOpen, setWorkspaceMenuOpen] =
+    useState(false)
+
+  const [copied, setCopied] = useState(false)
 
   const [workspace, setWorkspace] =
     useState<WorkspaceData | null>(null)
@@ -105,6 +122,37 @@ export function AppShell({
     loadWorkspace()
   }, [workspaceId])
 
+  useEffect(() => {
+    const handleWorkspaceUpdated = (
+      event: Event
+    ) => {
+      const customEvent =
+        event as CustomEvent<WorkspaceData>
+
+      if (
+        customEvent.detail.id ===
+        workspaceId
+      ) {
+        setWorkspace({
+          id: customEvent.detail.id,
+          name: customEvent.detail.name,
+        })
+      }
+    }
+
+    window.addEventListener(
+      'workspace-updated',
+      handleWorkspaceUpdated
+    )
+
+    return () => {
+      window.removeEventListener(
+        'workspace-updated',
+        handleWorkspaceUpdated
+      )
+    }
+  }, [workspaceId])
+
   const handleShareWorkspace = async () => {
     if (!workspaceId) {
       return
@@ -113,8 +161,33 @@ export function AppShell({
     const shareUrl =
       `${window.location.origin}/workspace/${workspaceId}`
 
-    await navigator.clipboard.writeText(
-      shareUrl
+    try {
+      await navigator.clipboard.writeText(
+        shareUrl
+      )
+
+      setCopied(true)
+
+      window.setTimeout(() => {
+        setCopied(false)
+      }, 2000)
+    } catch (error) {
+      console.error(
+        'Failed to copy workspace link:',
+        error
+      )
+    }
+  }
+
+  const handleManageWorkspace = () => {
+    if (!workspaceId) {
+      return
+    }
+
+    setWorkspaceMenuOpen(false)
+
+    navigate(
+      `/workspace/${workspaceId}/app/workspace`
     )
   }
 
@@ -153,35 +226,84 @@ export function AppShell({
           My Tasks
         </span>
 
-        <button
-          type="button"
-          className="workspace-select central-workspace"
-          onClick={() =>
-            setWorkspaceOpen(
-              (value) => !value
-            )
-          }
-          aria-expanded={workspaceOpen}
-        >
-          <span className="workspace-dot">
-            {getInitials(
-              workspace?.name
-            ).slice(0, 1)}
-          </span>
+        <div className="workspace-select-container">
+          <div className="workspace-select central-workspace">
+            <button
+              type="button"
+              className="workspace-main-button"
+              onClick={() =>
+                setWorkspaceOpen(
+                  (value) => !value
+                )
+              }
+              aria-expanded={workspaceOpen}
+            >
+              <span className="workspace-dot">
+                {getInitials(
+                  workspace?.name
+                ).slice(0, 1)}
+              </span>
 
-          <span>
-            {workspace?.name ??
-              'Loading workspace...'}
-          </span>
+              <span className="workspace-name">
+                {workspace?.name ??
+                  'Loading workspace...'}
+              </span>
+            </button>
 
-          <ChevronDown
-            className={
-              workspaceOpen
-                ? 'rotate'
-                : ''
-            }
-          />
-        </button>
+            <button
+              type="button"
+              className="workspace-more-button"
+              aria-label="Workspace options"
+              aria-expanded={workspaceMenuOpen}
+              onClick={() =>
+                setWorkspaceMenuOpen(
+                  (value) => !value
+                )
+              }
+            >
+              <MoreHorizontal />
+            </button>
+
+            <span className="workspace-action-divider" />
+
+            <button
+              type="button"
+              className="workspace-chevron-button"
+              aria-label={
+                workspaceOpen
+                  ? 'Collapse workspace'
+                  : 'Expand workspace'
+              }
+              onClick={() =>
+                setWorkspaceOpen(
+                  (value) => !value
+                )
+              }
+            >
+              <ChevronDown
+                className={
+                  workspaceOpen
+                    ? 'rotate'
+                    : ''
+                }
+              />
+            </button>
+          </div>
+
+          {workspaceMenuOpen ? (
+            <div className="workspace-menu">
+              <button
+                type="button"
+                onClick={
+                  handleManageWorkspace
+                }
+              >
+                <SlidersHorizontal />
+                Manage Workspace
+              </button>
+            </div>
+          ) : null}
+        </div>
 
         {workspaceOpen ? (
           <div className="workspace-nav">
@@ -207,11 +329,6 @@ export function AppShell({
           <Settings />
           Settings
         </span>
-
-        <button type="button">
-          <CircleHelp />
-          Help & support
-        </button>
 
         <div className="profile">
           <span className="avatar">
@@ -301,16 +418,21 @@ export function AppShell({
         </header>
 
         <div className="top-actions">
-          <button
-            type="button"
-            className="share-workspace-button"
-            onClick={
-              handleShareWorkspace
-            }
-          >
-            <Share2 />
-            Share Workspace
-          </button>
+          {!isWorkspaceManagePage ? (
+            <button
+              type="button"
+              className="share-workspace-button"
+              onClick={
+                handleShareWorkspace
+              }
+            >
+              <Share2 />
+
+              {copied
+                ? 'Link Copied!'
+                : 'Share Workspace'}
+            </button>
+          ) : null}
 
           <button
             type="button"
@@ -332,6 +454,31 @@ export function AppShell({
               : 'Dark'}
           </button>
         </div>
+
+        {isLoading ? (
+          <div
+            className="api-status"
+            role="status"
+          >
+            Loading tasks...
+          </div>
+        ) : null}
+
+        {error ? (
+          <div
+            className="api-status api-status-error"
+            role="alert"
+          >
+            <span>{error}</span>
+
+            <button
+              onClick={clearError}
+              aria-label="Dismiss message"
+            >
+              ×
+            </button>
+          </div>
+        ) : null}
 
         {children}
       </main>

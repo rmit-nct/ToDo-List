@@ -166,8 +166,8 @@ function CreateWorkspaceForm() {
           placeholder="you@example.com"
           {...register('creatorEmail')}
         />
-        {errors.memberName && (
-          <span className="form-error">{errors.memberName.message}</span>
+        {errors.creatorEmail && (
+          <span className="form-error">{errors.creatorEmail.message}</span>
         )}
       </label>
 

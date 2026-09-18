@@ -13,6 +13,7 @@ import CreateWorkspaceForm from '../components/CreateWorkspaceForm'
 import { API_BASE_URL } from '../api'
 
 import './LandingPage.css'
+import { BrandLogo } from '../components/BrandLogo'
 
 function LandingPage() {
   const { workspaceId } = useParams()
@@ -68,14 +69,7 @@ function LandingPage() {
     <main className="landing-page">
       <section className="landing-promo">
         <div className="landing-brand">
-          <div className="landing-brand-mark">
-            N
-          </div>
-
-          <div className="landing-brand-text">
-            <strong>NEO</strong>
-            <span>To-do</span>
-          </div>
+          <BrandLogo tone="on-dark" />
         </div>
 
         <div className="landing-promo-content">
