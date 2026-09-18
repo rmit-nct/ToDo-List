@@ -12,6 +12,7 @@ if (worker) {
     varsPath,
     `MONGODB_URI=${db.getUri()}
 MONGODB_DB=nct-isolated-qa
+MONGODB_COLLECTION_PREFIX=original_
 NEXTAUTH_SECRET=${randomBytes(32).toString("hex")}
 NEXTAUTH_URL=http://localhost:3100
 APP_ORIGINS=http://localhost:3100,http://nct-todo.ttr.gg
@@ -41,6 +42,7 @@ const child = spawn(
       ...process.env,
       MONGODB_URI: db.getUri(),
       MONGODB_DB: "nct-isolated-qa",
+      MONGODB_COLLECTION_PREFIX: "original_",
       NEXTAUTH_SECRET: randomBytes(32).toString("hex"),
       NEXTAUTH_URL: "http://localhost:3100",
       APP_ORIGINS: "http://localhost:3100",

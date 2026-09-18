@@ -30,9 +30,20 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useLayoutEffect(() => {
-    document.documentElement.dataset.theme = dark ? 'dark' : 'light'
-    document.documentElement.classList.toggle('theme-dark', dark)
-    document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
+    const root = document.documentElement
+    root.dataset.themeChanging = ''
+    root.dataset.theme = dark ? 'dark' : 'light'
+    root.classList.toggle('theme-dark', dark)
+    root.style.colorScheme = dark ? 'dark' : 'light'
+
+    // Keep transitions disabled through the first paint of the new palette.
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => { delete root.dataset.themeChanging })
+    })
+    return () => {
+      cancelAnimationFrame(frame)
+      delete root.dataset.themeChanging
+    }
   }, [dark])
 
   const setPreference = (value: ThemePreference) => {

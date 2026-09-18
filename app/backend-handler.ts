@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import mongoose from "mongoose";
 import serverless from "serverless-http";
 import { createServer } from "node:http";
-import { scope, schemas } from "../backend/runtime-mongoose";
+import { scope, schemas, collectionName } from "../backend/runtime-mongoose";
 
 let indexesReady = false;
 
@@ -39,7 +39,8 @@ export async function handleRequest(request: Request) {
       if (!indexesReady) {
         for (const [name, schema] of schemas) {
           const model =
-            connection.models[name] || connection.model(name, schema);
+            connection.models[name] ||
+            connection.model(name, schema, collectionName(name, schema));
           await model.createIndexes();
         }
         indexesReady = true;

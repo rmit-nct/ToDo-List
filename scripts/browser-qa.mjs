@@ -9,7 +9,22 @@ const page = await context.newPage();
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 await mkdir("/tmp/nct-qa", { recursive: true });
+let liveAccount;
+const livePassword = `Release-${Date.now()}-${crypto.randomUUID()}`;
 try {
+  if (process.env.LIVE_QA === "1") {
+    const response = await context.request.post(`${base}/api/auth/register`, {
+      headers: { Origin: base },
+      data: {
+        name: "Release QA",
+        email: `release-${Date.now()}@example.test`,
+        password: livePassword,
+      },
+    });
+    if (response.status() !== 201)
+      throw new Error(`QA registration failed: ${response.status()}`);
+    liveAccount = await response.json();
+  }
   await page.goto(base);
   await expect(
     page.getByRole("heading", { name: "Create Workspace", exact: true }),
@@ -159,5 +174,22 @@ try {
     "Browser QA passed: original entry, original Home and member form, creation, reload persistence, quick actions, column collapse, theme persistence, mobile navigation, dialog Escape, deletion; no page errors or horizontal overflow.",
   );
 } finally {
-  await browser.close();
+  try {
+    if (liveAccount) {
+      const current = await context.request.get(`${base}/api/users/me`);
+      if (!current.ok() || (await current.json()).id !== liveAccount.id)
+        throw new Error("Refusing cleanup: QA identity changed");
+      const cleanup = await context.request.delete(`${base}/api/users/me`, {
+        headers: { Origin: base },
+        data: { confirmation: "DELETE", password: livePassword },
+      });
+      if (!cleanup.ok())
+        throw new Error(`QA cleanup failed: ${cleanup.status()}`);
+      console.log(
+        "Removed only the temporary release account and its workspaces.",
+      );
+    }
+  } finally {
+    await browser.close();
+  }
 }

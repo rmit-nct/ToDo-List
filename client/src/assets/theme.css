@@ -23,3 +23,11 @@ body { background: var(--canvas); color: var(--ink); }
 [data-theme='dark'] .landing-entry-heading p { color: var(--muted); }
 [data-theme='dark'] .workspace-form-field input { background: var(--surface); color: var(--ink); border-color: var(--line); }
 @media (prefers-reduced-motion: reduce) { .app { transition: none; } }
+
+/* Theme changes are immediate; other interaction transitions remain intact. */
+html[data-theme-changing],
+html[data-theme-changing] *,
+html[data-theme-changing] *::before,
+html[data-theme-changing] *::after {
+  transition: none !important;
+}

@@ -4,17 +4,25 @@ const mongoose = require("mongoose");
 const { AsyncLocalStorage } = require("node:async_hooks");
 const scope = new AsyncLocalStorage();
 const schemas = new Map();
+function collectionName(name, schema) {
+  return (
+    (process.env.MONGODB_COLLECTION_PREFIX || "") +
+    (schema.options.collection || mongoose.pluralize()(name))
+  );
+}
 module.exports = {
   Schema: mongoose.Schema,
   scope,
   schemas,
+  collectionName,
   model(name, schema) {
     schemas.set(name, schema);
     const fallback = mongoose.models[name] || mongoose.model(name, schema);
     const current = () => {
       const connection = scope.getStore();
       return connection
-        ? connection.models[name] || connection.model(name, schema)
+        ? connection.models[name] ||
+            connection.model(name, schema, collectionName(name, schema))
         : fallback;
     };
     return new Proxy(fallback, {

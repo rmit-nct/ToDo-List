@@ -24,5 +24,6 @@
     "NEXTAUTH_URL": "https://nct-todo.ttr.gg",
     "APP_ORIGINS": "https://nct-todo.ttr.gg",
     "MONGODB_DB": "nct-todo-production",
+    "MONGODB_COLLECTION_PREFIX": "original_",
   },
 }
