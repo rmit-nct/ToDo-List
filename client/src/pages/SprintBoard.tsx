@@ -14,7 +14,8 @@ const columns: { status: TaskStatus; title: string; color: string }[] = [
 export function SprintBoard() {
   const { workspaceId = 'web-dev' } = useParams();
   const { tasks, moveTask } = useTasks();
-  const { workspaceMembers } = useWorkspaceMembers(workspaceId);
+  const { workspaceMembers, workspaceInfo } = useWorkspaceMembers(workspaceId);
+  const [inviteMessage, setInviteMessage] = useState('');
   const [query, setQuery] = useState('');
   const [assignee, setAssignee] = useState('all');
   const [modalTask, setModalTask] = useState<Task | null | undefined>(undefined);
@@ -28,7 +29,8 @@ export function SprintBoard() {
   });
 
   return <div className="page board-page">
-    <div className="page-heading board-heading"><div><h1>Weekly Sprint Board</h1><span>Plan, share ownership, and keep work moving.</span></div><div className="board-actions"><button className="invite"><Copy /> NEO-WEB-24</button><button className="primary" onClick={() => setModalTask(null)}><Plus /> New task</button></div></div>
+    <div className="page-heading board-heading"><div><h1>Weekly Sprint Board</h1><span>Plan, share ownership, and keep work moving.</span></div><div className="board-actions"><button className="invite" onClick={async () => { try { await navigator.clipboard.writeText(workspaceInfo.inviteCode || `${location.origin}/workspace/${workspaceId}`); setInviteMessage('Invite copied.'); } catch { setInviteMessage('Unable to copy. Open Settings to view the invite.'); } }}><Copy /> {workspaceInfo.inviteCode || 'Copy invite link'}</button><button className="primary" onClick={() => setModalTask(null)}><Plus /> New task</button></div></div>
+    {inviteMessage && <p role="status">{inviteMessage}</p>}
     <section className="filters board-filters"><div className="search"><Search /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search this workspace..." aria-label="Search board" /></div><span className="filter-label"><SlidersHorizontal /> Filter</span><select value={assignee} onChange={(e) => setAssignee(e.target.value)} aria-label="Filter by assignee"><option value="all">All assignees</option>{workspaceMembers.map((member) => <option value={member.id} key={member.id}>{member.name}</option>)}</select></section>
     <section className="kanban" aria-label="Weekly sprint board">{columns.map((column) => {
       const columnTasks = filtered.filter((task) => task.status === column.status);

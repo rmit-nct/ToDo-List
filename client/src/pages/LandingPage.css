@@ -6,6 +6,7 @@
   min-height: 100vh;
 
   display: grid;
+
   grid-template-columns:
     minmax(540px, 1.15fr)
     minmax(420px, 0.85fr);
@@ -22,9 +23,11 @@
   padding: 48px 64px;
 
   display: flex;
+
   flex-direction: column;
 
   background: #202946;
+
   color: #ffffff;
 }
 
@@ -35,6 +38,7 @@
 
 .landing-brand {
   display: flex;
+
   align-items: center;
 }
 
@@ -45,6 +49,7 @@
 
 .landing-promo-content {
   width: 100%;
+
   max-width: 700px;
 
   margin: auto 0;
@@ -59,9 +64,11 @@
   color: #8ce7ff;
 
   font-size: 11px;
+
   font-weight: 700;
 
   letter-spacing: 2.3px;
+
   text-transform: uppercase;
 }
 
@@ -74,9 +81,11 @@
   color: #ffffff;
 
   font-size: clamp(56px, 5vw, 78px);
+
   line-height: 1;
 
   font-weight: 800;
+
   letter-spacing: -2.5px;
 }
 
@@ -89,6 +98,7 @@
 
 .landing-title-line {
   width: 64px;
+
   height: 4px;
 
   margin-top: 26px;
@@ -112,6 +122,7 @@
   color: #c7d2e6;
 
   font-size: 16px;
+
   line-height: 1.65;
 }
 
@@ -126,6 +137,7 @@
   margin-top: 40px;
 
   display: grid;
+
   grid-template-columns:
     repeat(3, minmax(0, 1fr));
 
@@ -136,12 +148,15 @@
   position: relative;
 
   min-width: 0;
+
   height: 235px;
 
   padding: 22px;
 
   display: flex;
+
   flex-direction: column;
+
   align-items: flex-start;
 
   overflow: hidden;
@@ -178,7 +193,9 @@
   position: absolute;
 
   left: 25%;
+
   right: 25%;
+
   bottom: 0;
 
   height: 2px;
@@ -204,11 +221,13 @@
 
 .landing-feature-icon {
   width: 54px;
+
   height: 54px;
 
   margin-bottom: 20px;
 
   display: grid;
+
   place-items: center;
 
   flex-shrink: 0;
@@ -235,6 +254,7 @@
 
 .landing-feature-icon svg {
   width: 27px;
+
   height: 27px;
 
   stroke-width: 2;
@@ -251,14 +271,17 @@
   color: #ffffff;
 
   font-size: 21px;
+
   line-height: 1.15;
 
   font-weight: 750;
+
   letter-spacing: -0.4px;
 }
 
 .landing-feature-line {
   width: 36px;
+
   height: 3px;
 
   margin: 15px 0;
@@ -282,6 +305,7 @@
   color: #b9c5d9;
 
   font-size: 13px;
+
   line-height: 1.55;
 }
 
@@ -327,6 +351,7 @@
 
 .landing-feature-card:hover::after {
   left: 12%;
+
   right: 12%;
 
   opacity: 1;
@@ -343,7 +368,9 @@
   padding: 48px;
 
   display: flex;
+
   align-items: center;
+
   justify-content: center;
 
   background: #eaf0f7;
@@ -351,6 +378,7 @@
 
 .landing-entry-card {
   width: 100%;
+
   max-width: 420px;
 }
 
@@ -369,6 +397,7 @@
   color: #202946;
 
   font-size: 32px;
+
   line-height: 1.2;
 
   font-weight: 700;
@@ -380,6 +409,7 @@
   color: #66758c;
 
   font-size: 15px;
+
   line-height: 1.5;
 }
 
@@ -395,14 +425,18 @@
 }
 
 .workspace-form-field {
-  margin-top: 22px;
+  margin-top: 24px;
 
   display: grid;
-  gap: 8px;
+
+  grid-template-columns: 1fr;
+
+  gap: 6px;
 
   color: #202946;
 
   font-size: 14px;
+
   font-weight: 600;
 }
 
@@ -417,6 +451,7 @@
 
 .workspace-form-field input {
   width: 100%;
+
   height: 48px;
 
   padding: 0 14px;
@@ -427,6 +462,7 @@
   border-radius: 8px;
 
   background: #ffffff;
+
   color: #202946;
 
   outline: none;
@@ -453,13 +489,28 @@
    FORM ERROR
    ========================= */
 
-.workspace-form .form-error {
-  margin: 5px 0 0;
+.workspace-form-field .form-error {
+  margin: 2px 0 0;
 
   color: #d14343;
 
   font-size: 13px;
+
   font-weight: 400;
+
+  line-height: 1.4;
+}
+
+.workspace-form > .form-error {
+  margin: 12px 0 0;
+
+  color: #d14343;
+
+  font-size: 13px;
+
+  font-weight: 400;
+
+  line-height: 1.4;
 }
 
 
@@ -469,17 +520,21 @@
 
 .workspace-form-submit {
   width: 100%;
+
   height: 48px;
 
   margin-top: 24px;
 
   border: none;
+
   border-radius: 8px;
 
   background: #202946;
+
   color: #ffffff;
 
   font-size: 14px;
+
   font-weight: 700;
 
   cursor: pointer;
@@ -510,21 +565,25 @@
 
 .workspace-joined-icon {
   width: 64px;
+
   height: 64px;
 
   margin: 0 auto 22px;
 
   display: grid;
+
   place-items: center;
 
   border-radius: 50%;
 
   background: #dff5e8;
+
   color: #2f7d55;
 }
 
 .workspace-joined-icon svg {
   width: 32px;
+
   height: 32px;
 
   stroke-width: 2.5;
@@ -536,6 +595,7 @@
   color: #202946;
 
   font-size: 32px;
+
   font-weight: 700;
 }
 
@@ -545,22 +605,27 @@
   color: #66758c;
 
   font-size: 15px;
+
   line-height: 1.5;
 }
 
 .workspace-enter-button {
   width: 100%;
+
   height: 48px;
 
   margin-top: 28px;
 
   border: none;
+
   border-radius: 8px;
 
   background: #202946;
+
   color: #ffffff;
 
   font-size: 14px;
+
   font-weight: 700;
 
   cursor: pointer;
@@ -580,8 +645,10 @@
 
 .workspace-error-icon {
   color: #e53935;
+
   background: rgba(229, 57, 53, 0.1);
 }
+
 
 /* =========================
    MEDIUM SCREEN
@@ -598,6 +665,7 @@
 
   .landing-feature-card {
     height: 220px;
+
     padding: 18px;
   }
 

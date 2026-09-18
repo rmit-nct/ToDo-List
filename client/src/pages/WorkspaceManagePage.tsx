@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { useParams } from 'react-router-dom'
 
-import { API_BASE_URL } from '../api'
+import { API_BASE_URL, apiFetch } from '../api'
 import type { TeamMember } from '../types'
 
 type WorkspaceResponse = {
@@ -36,6 +36,9 @@ export function WorkspaceManagePage() {
   const [error, setError] =
     useState<string | null>(null)
 
+  const [nameError, setNameError] =
+    useState<string | null>(null)
+
   const [saved, setSaved] =
     useState(false)
 
@@ -54,7 +57,7 @@ export function WorkspaceManagePage() {
         setIsLoading(true)
         setError(null)
 
-        const response = await fetch(
+        const response = await apiFetch(
           `${API_BASE_URL}/api/workspaces/${workspaceId}`
         )
 
@@ -89,22 +92,28 @@ export function WorkspaceManagePage() {
   }, [workspaceId])
 
   const handleSave = async () => {
-    if (
-      !workspaceId ||
-      workspaceName.trim() === ''
-    ) {
+    if (!workspaceId) {
       setError(
+        'Workspace ID is missing.'
+      )
+      return
+    }
+
+    if (workspaceName.trim() === '') {
+      setNameError(
         'Workspace name is required.'
       )
       return
     }
+
+    setNameError(null)
 
     try {
       setIsSaving(true)
       setError(null)
       setSaved(false)
 
-      const response = await fetch(
+      const response = await apiFetch(
         `${API_BASE_URL}/api/workspaces/${workspaceId}`,
         {
           method: 'PATCH',
@@ -115,7 +124,7 @@ export function WorkspaceManagePage() {
           },
 
           body: JSON.stringify({
-            name: workspaceName,
+            name: workspaceName.trim(),
           }),
         }
       )
@@ -132,14 +141,17 @@ export function WorkspaceManagePage() {
       setWorkspaceName(result.name)
       setSaved(true)
 
-			window.dispatchEvent(
-				new CustomEvent('workspace-updated', {
-					detail: {
-						id: result.id,
-						name: result.name,
-					},
-				})
-			)
+      window.dispatchEvent(
+        new CustomEvent(
+          'workspace-updated',
+          {
+            detail: {
+              id: result.id,
+              name: result.name,
+            },
+          }
+        )
+      )
 
       window.setTimeout(() => {
         setSaved(false)
@@ -226,12 +238,25 @@ export function WorkspaceManagePage() {
             <input
               type="text"
               value={workspaceName}
-              onChange={(event) =>
+              aria-invalid={
+                nameError
+                  ? 'true'
+                  : 'false'
+              }
+              onChange={(event) => {
                 setWorkspaceName(
                   event.target.value
                 )
-              }
+
+                setNameError(null)
+              }}
             />
+
+            {nameError ? (
+              <span className="form-error">
+                {nameError}
+              </span>
+            ) : null}
           </label>
 
           <button

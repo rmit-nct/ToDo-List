@@ -1,4 +1,5 @@
-import { API_BASE_URL } from '../api'
+import { useTheme } from '../themeContext'
+import { API_BASE_URL, apiFetch } from '../api'
 import { useTasks } from '../taskStoreContext'
 
 import {
@@ -22,6 +23,7 @@ import {
   X,
 } from 'lucide-react'
 import {
+  Link,
   NavLink,
   useLocation,
   useNavigate,
@@ -56,7 +58,7 @@ export function AppShell({
 
   const { error, isLoading, clearError } = useTasks()
 
-  const [dark, setDark] = useState(false)
+  const { dark, toggleTheme } = useTheme()
   const [menuOpen, setMenuOpen] = useState(false)
 
   const [workspaceOpen, setWorkspaceOpen] =
@@ -75,6 +77,8 @@ export function AppShell({
 
   useEffect(() => {
     if (!workspaceId) {
+      apiFetch(`${API_BASE_URL}/api/users/me`).then(response => response.ok ? response.json() : null).then(setMember).catch(() => setMember(null))
+      setWorkspace(null)
       return
     }
 
@@ -95,7 +99,7 @@ export function AppShell({
 
     const loadWorkspace = async () => {
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           `${API_BASE_URL}/api/workspaces/${workspaceId}`
         )
 
@@ -106,6 +110,9 @@ export function AppShell({
         }
 
         const data = await response.json()
+        if (data.ownerId) {
+          setMember(data.members.find((item: MemberIdentity) => item.id === data.currentMemberId) || null)
+        }
 
         setWorkspace({
           id: data.id,
@@ -152,6 +159,17 @@ export function AppShell({
       )
     }
   }, [workspaceId])
+
+  useEffect(() => {
+    const onMemberUpdated = (event: Event) => {
+      const identity = (event as CustomEvent<MemberIdentity>).detail
+      setMember(identity)
+    }
+    window.addEventListener('member-updated', onMemberUpdated)
+    return () => window.removeEventListener('member-updated', onMemberUpdated)
+  }, [])
+
+  useEffect(() => { setMenuOpen(false); setWorkspaceMenuOpen(false) }, [location.pathname])
 
   const handleShareWorkspace = async () => {
     if (!workspaceId) {
@@ -216,17 +234,19 @@ export function AppShell({
           OVERVIEW
         </p>
 
-        <NavLink to={`/workspace/${workspaceId}/app/home`}>
+        <NavLink
+          to={workspaceId ? `/workspace/${workspaceId}/app/home` : "/account"}
+        >
           <Home />
           Homepage
         </NavLink>
 
-        <span className="future-nav">
+        <NavLink to={workspaceId ? `/workspace/${workspaceId}/app/my-tasks` : "/tasks"} onClick={() => setMenuOpen(false)}>
           <UserRoundCheck />
           My Tasks
-        </span>
+        </NavLink>
 
-        <div className="workspace-select-container">
+        {workspaceId && <div className="workspace-select-container">
           <div className="workspace-select central-workspace">
             <button
               type="button"
@@ -303,9 +323,9 @@ export function AppShell({
               </button>
             </div>
           ) : null}
-        </div>
+        </div>}
 
-        {workspaceOpen ? (
+        {workspaceOpen && workspaceId ? (
           <div className="workspace-nav">
             <NavLink
               to={`/workspace/${workspaceId}/app/today`}
@@ -325,12 +345,9 @@ export function AppShell({
       </nav>
 
       <div className="sidebar-footer">
-        <span className="future-nav">
-          <Settings />
-          Settings
-        </span>
+        <NavLink to={workspaceId ? `/workspace/${workspaceId}/app/settings` : "/account"} onClick={() => setMenuOpen(false)}><Settings />Settings</NavLink>
 
-        <div className="profile">
+        <Link className="profile" aria-label="Open profile settings" to={workspaceId ? `/workspace/${workspaceId}/app/settings#profile` : "/account"} onClick={() => setMenuOpen(false)}>
           <span className="avatar">
             {getInitials(member?.name)}
           </span>
@@ -348,7 +365,7 @@ export function AppShell({
           </div>
 
           <ChevronDown />
-        </div>
+        </Link>
       </div>
     </>
   )
@@ -404,9 +421,7 @@ export function AppShell({
             type="button"
             aria-label="Toggle color theme"
             onClick={() =>
-              setDark(
-                (value) => !value
-              )
+              toggleTheme()
             }
           >
             {dark ? (
@@ -418,7 +433,7 @@ export function AppShell({
         </header>
 
         <div className="top-actions">
-          {!isWorkspaceManagePage ? (
+          {workspaceId && !isWorkspaceManagePage ? (
             <button
               type="button"
               className="share-workspace-button"
@@ -438,9 +453,7 @@ export function AppShell({
             type="button"
             className="theme-toggle"
             onClick={() =>
-              setDark(
-                (value) => !value
-              )
+              toggleTheme()
             }
           >
             {dark ? (

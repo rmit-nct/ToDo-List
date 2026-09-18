@@ -89,7 +89,7 @@ function HomePage() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by title..."
+            placeholder="Search my tasks..."
             aria-label="Search tasks by title"
           />
         </div>

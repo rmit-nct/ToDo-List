@@ -14,10 +14,65 @@ const Task = require("./models/Task");
 import { mockMembers } from "./mockData";
 import type { TeamMember } from "./types";
 
-const app = express();
+const { router: accountRouter, optionalUser, encryptionKey } = require('./account');
+type WorkspaceMember = {
+  id: string;
+  userId?: string;
+  role?: string;
+  title?: string;
+  name: string;
+  email?: string;
+};
 
-app.use(cors());
-app.use(express.json());
+const app = express();
+const allowedOrigins = (process.env.APP_ORIGINS || 'http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:5174').split(',').map(value => value.trim());
+
+app.use(cors({ origin: allowedOrigins, credentials: true }));
+app.use(express.json({ limit: '64kb' }));
+app.use((req, res, next) => {
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+    if (req.headers.origin && !allowedOrigins.includes(req.headers.origin)) return res.status(403).json({ error: 'Origin is not allowed.' });
+    if (!req.is('application/json')) return res.status(415).json({ error: 'Use application/json.' });
+  }
+  next();
+});
+app.use(optionalUser);
+app.use('/api', accountRouter);
+
+// Enforce membership on account-backed workspaces; preserve legacy link workspaces.
+app.use('/api/tasks', async (req, res, next) => {
+  let workspaceId = req.query.workspaceId || req.body?.workspaceId;
+  const taskId = req.path.split('/')[1];
+  if (taskId) {
+    const task = await Task.findOne({ id: taskId });
+    if (!task) return res.status(404).json({ error: 'Task not found.' });
+    workspaceId = task.workspaceId;
+    req.existingTask = task;
+  }
+  if (typeof workspaceId !== 'string' || !workspaceId) return res.status(400).json({ error: 'Workspace ID is required.' });
+  const workspace = await Workspace.findOne({ id: workspaceId, deleting: { $ne: true } });
+  if (!workspace) return res.status(404).json({ error: 'Workspace not found.' });
+  if (workspace.ownerId) {
+    const account = req.account;
+    if (!account || !workspace.members.some((member: WorkspaceMember) => member.userId === account.id)) return res.status(403).json({ error: 'Join this workspace to access its tasks.' });
+    if (req.method === 'DELETE' && workspace.ownerId !== account.id && req.existingTask?.creator?.id !== account.id) return res.status(403).json({ error: 'Only the creator or workspace owner can delete a task.' });
+    if (['POST', 'PUT'].includes(req.method)) {
+      const assigneeId = req.body.assignedMemberId || req.body.assignee?.id;
+            const assignee = workspace.members.find((member: WorkspaceMember) => member.id === assigneeId);
+      if (!assignee) return res.status(400).json({ error: 'Choose a workspace member as assignee.' });
+            const initials = (name: string) => name.split(/\s+/).map((part: string) => part[0]).join('').slice(0, 2).toUpperCase();
+      req.body.assignee = { id: assignee.id, name: assignee.name, initials: initials(assignee.name), color: '#4896ac' };
+      req.body.assignedMemberId = assignee.id;
+            req.body.creator = req.existingTask?.creator || { id: account.id, name: account.name, initials: initials(account.name), color: '#4896ac' };
+    }
+  }
+  if (req.existingTask && req.body) {
+    req.body.workspaceId = workspaceId;
+    req.body.id = req.existingTask.id;
+    req.body.createdAt = req.existingTask.createdAt;
+  }
+  next();
+});
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Server is running!");
@@ -195,17 +250,22 @@ app.post("/api/workspaces", async (req: Request, res: Response) => {
     }
 
     const workspaceId = crypto.randomUUID();
-    const creatorId = crypto.randomUUID();
+    const creatorId = req.account?.id || crypto.randomUUID();
 
     const creator = {
       id: creatorId,
-      name: creatorName.trim(),
-      email: creatorEmail?.trim() || "",
+      userId: req.account?.id || '',
+      role: req.account ? 'owner' : 'member',
+      title: req.account?.title || '',
+      name: req.account?.name || creatorName.trim(),
+      email: req.account?.email || creatorEmail?.trim() || "",
     };
 
     const newWorkspace = await Workspace.create({
       id: workspaceId,
       name: workspaceName.trim(),
+      ownerId: req.account?.id || '',
+      inviteCode: 'NCT-' + crypto.randomBytes(6).toString('hex').toUpperCase(),
       members: [creator],
     });
 
@@ -227,7 +287,10 @@ app.get("/api/workspaces/:workspaceId", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Workspace not found" });
     }
 
-    res.json(workspace);
+      if (workspace.ownerId && !workspace.members.some((member: WorkspaceMember) => member.userId === req.account?.id)) {
+      return res.json({ id: workspace.id, name: workspace.name, members: [], ownerId: workspace.ownerId });
+    }
+    res.json({ ...workspace.toObject(), currentMemberId: req.account?.id || '' });
   } catch (error) {
     console.error("Get workspace error:", error);
     res.status(500).json({ error: "Failed to get workspace" });
@@ -240,6 +303,10 @@ app.patch("/api/workspaces/:workspaceId", async (req: Request, res: Response) =>
   try {
     const { workspaceId } = req.params;
     const { name } = req.body;
+    const workspace = await Workspace.findOne({ id: workspaceId, deleting: { $ne: true } });
+    if (!workspace) return res.status(404).json({ error: 'Workspace not found.' });
+    if (!workspace.ownerId || workspace.ownerId !== req.account?.id) return res.status(403).json({ error: 'Only a verified workspace owner can change its name.' });
+    if (typeof name !== 'string' || name.trim().length > 80) return res.status(400).json({ error: 'Use a workspace name of 1-80 characters.' });
 
     if (!name || name.trim() === "") {
       return res.status(400).json({ error: "Workspace name is required" });
@@ -278,10 +345,17 @@ app.post("/api/workspaces/:workspaceId/members", async (req: Request, res: Respo
       return res.status(404).json({ error: "Workspace not found" });
     }
 
+    if (workspace.ownerId && !req.account) return res.status(401).json({ error: 'Sign in before joining this workspace.' });
+    const account = req.account;
+    const existingMember = account && workspace.members.find((member: WorkspaceMember) => member.userId === account.id);
+    if (existingMember) return res.json(existingMember);
     const newMember = {
-      id: crypto.randomUUID(),
-      name: name.trim(),
-      email: email?.trim() || "",
+      userId: req.account?.id || '',
+      role: 'member',
+      title: req.account?.title || '',
+      id: req.account?.id || crypto.randomUUID(),
+      name: req.account?.name || name.trim(),
+      email: req.account?.email || email?.trim() || "",
     };
 
     workspace.members.push(newMember);
@@ -306,6 +380,7 @@ let localDatabase: import("mongodb-memory-server").MongoMemoryServer | undefined
 let server: ReturnType<typeof app.listen> | undefined;
 
 async function start() {
+  encryptionKey();
   let uri = process.env.MONGODB_URI?.trim();
 
   if (!uri) {
@@ -320,11 +395,11 @@ async function start() {
     const dbPath = path.join(__dirname, ".mongodb-data");
     await fs.mkdir(dbPath, { recursive: true });
 
-    localDatabase = await MongoMemoryServer.create({
+    const memoryServer = await MongoMemoryServer.create({
       instance: { dbPath, dbName: "neo-workspaces", storageEngine: "wiredTiger" },
     });
-
-    uri = localDatabase.getUri("neo-workspaces");
+    localDatabase = memoryServer;
+    uri = memoryServer.getUri("neo-workspaces");
   }
 
   await mongoose.connect(uri as string);
@@ -350,3 +425,4 @@ start().catch(async (error) => {
   await localDatabase?.stop();
   process.exit(1);
 });
+module.exports = { app };
