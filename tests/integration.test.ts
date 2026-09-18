@@ -101,3 +101,32 @@ test("teammate account and settings routes work through Next adapter", async () 
     await client.dispose();
   }
 });
+
+test('username login restores shared workspaces without granting outsiders access', async () => {
+  const client = await request.newContext({ baseURL: base, extraHTTPHeaders: { Origin: base } });
+  const outsider = await request.newContext({ baseURL: base, extraHTTPHeaders: { Origin: base } });
+  try {
+    assert.equal((await outsider.post('/api/username-session', { data: {} })).status(), 401);
+    const csrf = await (await client.get('/api/username/csrf')).json();
+    const login = await client.post('/api/username/callback/credentials', { form: {
+      csrfToken: csrf.csrfToken, username: 'restored-qa', json: 'true', callbackUrl: `${base}/account`,
+    } });
+    assert.equal(login.status(), 200);
+    const exchanged = await client.post('/api/username-session', { data: {} });
+    assert.equal(exchanged.status(), 200, await exchanged.text());
+    const account = await exchanged.json();
+    assert.equal(account.username, 'restored-qa');
+    assert.equal(account.email, '');
+    const workspaces = await (await client.get('/api/users/me/workspaces')).json();
+    const restored = workspaces.find((w: { id: string }) => w.id === 'restored-workspace');
+    assert.equal(restored.ownerId, 'restored-qa');
+    assert.deepEqual(restored.members.map((m: { userId: string }) => m.userId).sort(), ['restored-qa', 'teammate-qa']);
+    const tasks = await (await client.get('/api/tasks?workspaceId=restored-workspace')).json();
+    assert.equal(tasks[0].creator.id, 'teammate-qa');
+    assert.equal(tasks[0].assignee.id, 'restored-qa');
+    assert.equal((await outsider.get('/api/tasks?workspaceId=restored-workspace')).status(), 403);
+    assert.equal((await client.post('/api/username-session', { data: {}, headers: { Origin: 'https://untrusted.example' } })).status(), 403);
+    await client.post('/api/auth/logout', { data: {} });
+    assert.equal((await client.get('/api/users/me')).status(), 401);
+  } finally { await client.dispose(); await outsider.dispose(); }
+});

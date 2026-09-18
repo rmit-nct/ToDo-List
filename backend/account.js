@@ -13,7 +13,7 @@ const Task = require('./models/Task');
 
 const scrypt = promisify(crypto.scrypt);
 const hash = value => crypto.createHash('sha256').update(value).digest('hex');
-const publicUser = user => ({ id: user.id, name: user.name, email: user.email, title: user.title, twoFactorEnabled: user.twoFactorEnabled });
+const publicUser = user => ({ id: user.id, name: user.name, email: user.authMode === 'username' ? '' : user.email, authMode: user.authMode, username: user.username, title: user.title, twoFactorEnabled: user.twoFactorEnabled });
 const passwordValid = value => typeof value === 'string' && value.length >= 12 && value.length <= 128;
 const nameValid = value => typeof value === 'string' && value.trim().length > 0 && value.trim().length <= 80;
 const emailValid = value => typeof value === 'string' && value.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -50,7 +50,7 @@ async function passwordHash(password) {
   return `${salt}:${key.toString('hex')}`;
 }
 async function checkPassword(password, stored) {
-  if (typeof password !== 'string' || password.length > 128 || !stored) return false;
+  if (typeof password !== 'string' || password.length > 128 || !/^[a-f0-9]{32}:[a-f0-9]{128}$/.test(stored || '')) return false;
   const [salt, expected] = stored.split(':');
   const actual = await scrypt(password, salt, 64);
   return crypto.timingSafeEqual(actual, Buffer.from(expected, 'hex'));
@@ -90,6 +90,7 @@ function requireUser(req, res, next) {
   next();
 }
 async function confirmAccount(req) {
+  if (req.account.authMode === 'username') return req.body.username === req.account.username;
   return await checkPassword(req.body.password, req.account.passwordHash) && await checkOtp(req.account, req.body.code);
 }
 async function deleteWorkspace(workspace) {
@@ -211,8 +212,14 @@ router.delete('/users/me', requireUser, sensitive, async (req, res) => {
   await Task.updateMany({ $or: [{ assignedMemberId: id }, { 'assignee.id': id }] }, { $set: { assignedMemberId: '' }, $unset: { assignee: '' } });
   await Task.updateMany({ 'creator.id': id }, { $set: { creator: { id: 'deleted-user', name: 'Deleted member', initials: '?', color: '#68778e' } } });
   await Session.deleteMany({ userId: id });
+  if (req.account.authMode === 'username') {
+    const connection = require('./runtime-mongoose').scope.getStore();
+    // Remove the username credential too, so deleted profiles cannot sign in again.
+    // The archived workspace records stay intact; restoration markers prevent resurrection.
+    if (connection) await connection.db.collection('users').deleteOne({ id, authMode: 'username' });
+  }
   await User.deleteOne({ id });
   res.clearCookie('neo_session', cookieOptions).json({ message: 'Account deleted.' });
 });
 
-module.exports = { router, optionalUser, requireUser, passwordHash, publicUser, encryptionKey };
+module.exports = { issueSession, router, optionalUser, requireUser, passwordHash, publicUser, encryptionKey };

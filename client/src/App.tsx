@@ -5,6 +5,7 @@ import {
   Routes,
 } from 'react-router-dom'
 
+import { UsernamePage } from './pages/UsernamePage'
 import LandingPage from './pages/LandingPage'
 import { MyTasksPage } from './pages/MyTasksPage'
 import HomePage from './pages/HomePage'
@@ -65,10 +66,12 @@ function App() {
   return (
     <ThemeProvider><BrowserRouter>
       <Routes>
-        <Route path="/account" element={<AccountPage />} />
+        <Route path="/account" element={<UsernamePage />} />
+        <Route path="/login" element={<UsernamePage />} />
+        <Route path="/account/email" element={<AccountPage />} />
         <Route
           path="/"
-          element={<LandingPage />}
+          element={<UsernamePage />}
         />
 
         <Route

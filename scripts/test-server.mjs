@@ -4,6 +4,14 @@ import { randomBytes } from "node:crypto";
 const db = await MongoMemoryServer.create({
   instance: { dbName: "nct-isolated-qa" },
 });
+const { MongoClient } = await import('mongodb');
+const fixtureClient = new MongoClient(db.getUri());
+await fixtureClient.connect();
+const fixtures = fixtureClient.db('nct-isolated-qa');
+await fixtures.collection('users').insertMany(['restored-qa', 'teammate-qa'].map(username => ({ id: username, name: username, username, authMode: 'username', email: `username:${username}`, sessionVersion: 0 })));
+await fixtures.collection('workspaces').insertOne({ id: 'restored-workspace', name: 'Restored workspace', ownerId: 'restored-qa', memberIds: ['restored-qa', 'teammate-qa'], inviteCode: 'restored-qa-invite' });
+await fixtures.collection('tasks').insertOne({ id: 'restored-task', workspaceId: 'restored-workspace', title: 'Restored task', description: 'Legacy fixture', status: 'todo', priority: 'high', assignedMemberId: 'restored-qa', creatorId: 'teammate-qa', dueDate: new Date().toISOString().slice(0, 10), createdAt: new Date().toISOString() });
+await fixtureClient.close();
 const worker = process.env.QA_CLOUDFLARE === "1";
 const varsPath = new URL("../.dev.vars", import.meta.url);
 if (worker) {

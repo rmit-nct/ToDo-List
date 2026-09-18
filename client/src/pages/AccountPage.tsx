@@ -7,7 +7,7 @@ import CreateWorkspaceForm from '../components/CreateWorkspaceForm'
 import { useTheme } from '../themeContext'
 import './SettingsPage.css'
 
-export type Account = { id: string; name: string; email: string; title: string; twoFactorEnabled: boolean }
+export type Account = { id: string; name: string; email: string; title: string; twoFactorEnabled: boolean; authMode?: 'password' | 'username'; username?: string }
 type WorkspaceSummary = { id: string; name: string; members: { id: string; name: string; email: string }[] }
 
 export function AccountPage() {

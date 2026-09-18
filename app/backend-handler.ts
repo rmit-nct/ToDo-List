@@ -1,3 +1,5 @@
+import { getToken } from "next-auth/jwt";
+import { restoreUsernameProfile } from "./auth-lib/username-profile";
 import { createHash } from "node:crypto";
 import mongoose from "mongoose";
 import serverless from "serverless-http";
@@ -8,6 +10,7 @@ let indexesReady = false;
 
 export async function handleRequest(request: Request) {
   const url = new URL(request.url);
+  process.env.MONGODB_COLLECTION_PREFIX ||= "original_";
   const uri = process.env.MONGODB_URI;
   if (!uri)
     return Response.json(
@@ -45,6 +48,20 @@ export async function handleRequest(request: Request) {
         }
         indexesReady = true;
       }
+      let usernameAccount = null;
+      if (url.pathname === "/api/username-session" && request.method === "POST") {
+        if (!(process.env.APP_ORIGINS || url.origin).split(",").includes(request.headers.get("origin") || "")) {
+          return Response.json({ error: "Origin is not allowed." }, { status: 403 });
+        }
+        const cookies = Object.fromEntries((request.headers.get("cookie") || "").split(";").filter(Boolean).map(part => {
+          const index = part.indexOf("=");
+          return [part.slice(0, index).trim(), part.slice(index + 1)];
+        }));
+        const token = await getToken({ req: { headers: Object.fromEntries(request.headers), cookies } as never, secret: process.env.NEXTAUTH_SECRET });
+        if (typeof token?.uid === "string" && typeof token.version === "number") {
+          usernameAccount = await restoreUsernameProfile(connection, token.uid, token.version);
+        }
+      }
       const handleAsNodeRequest = (
         globalThis as typeof globalThis & {
           __nctHandleAsNodeRequest?: (
@@ -65,6 +82,7 @@ export async function handleRequest(request: Request) {
               value: request.headers.get("cf-connecting-ip") || "127.0.0.1",
               configurable: true,
             });
+            Object.assign(req, { usernameAccount });
             app(req, res);
           }),
         );
@@ -82,7 +100,7 @@ export async function handleRequest(request: Request) {
           server.close();
         }
       }
-      const invoke = serverless(app);
+      const invoke = serverless(app, { request: (req: object) => { Object.assign(req, { usernameAccount }); } });
       const result = (await invoke(
         {
           httpMethod: request.method,

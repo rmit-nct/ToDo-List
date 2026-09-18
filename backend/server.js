@@ -11,7 +11,7 @@ const Task = require("./models/Task");
 // Pull in our mock data (destructuring, same idea as on the frontend)
 const { mockMembers, } = require("./mockData");
 
-const { router: accountRouter, optionalUser, encryptionKey } = require('./account');
+const { router: accountRouter, optionalUser, encryptionKey, issueSession, publicUser } = require('./account');
 const app = express();
 const allowedOrigins = (process.env.APP_ORIGINS || 'http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:5174').split(',').map(value => value.trim());
 
@@ -26,6 +26,11 @@ app.use((req, res, next) => {
 });
 app.use(optionalUser);
 app.use('/api', accountRouter);
+app.post('/api/username-session', async (req, res) => {
+  if (!req.usernameAccount) return res.status(401).json({ error: 'Please enter your username again.' });
+  await issueSession(res, req.usernameAccount.id);
+  res.json(publicUser(req.usernameAccount));
+});
 
 // Enforce membership on account-backed workspaces; preserve legacy link workspaces.
 app.use('/api/tasks', async (req, res, next) => {
@@ -316,7 +321,7 @@ app.post("/api/workspaces", async (req, res) => {
       role: req.account ? 'owner' : 'member',
       title: req.account?.title || '',
       name: req.account?.name || creatorName.trim(),
-      email: req.account?.email || creatorEmail?.trim() || "",
+      email: req.account?.authMode === "username" ? "" : req.account?.email || creatorEmail?.trim() || "",
     };
 
     const newWorkspace = await Workspace.create({
@@ -449,7 +454,7 @@ app.post("/api/workspaces/:workspaceId/members", async (req, res) => {
       title: req.account?.title || '',
       id: req.account?.id || crypto.randomUUID(),
       name: req.account?.name || name.trim(),
-      email: req.account?.email || email?.trim() || "",
+      email: req.account?.authMode === "username" ? "" : req.account?.email || email?.trim() || "",
     };
 
     const updated = await Workspace.findOneAndUpdate(

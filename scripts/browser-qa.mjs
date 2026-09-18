@@ -24,10 +24,23 @@ try {
     if (response.status() !== 201)
       throw new Error(`QA registration failed: ${response.status()}`);
     liveAccount = await response.json();
+    await page.goto(`${base}/account/email`);
+    await page.getByRole("button", { name: "Sign out", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
+    await page.getByLabel("Email", { exact: true }).fill(liveAccount.email);
+    await page.getByLabel("Password", { exact: true }).fill(livePassword);
+    await page.locator('form button[type="submit"], form button.primary').click();
+    await expect(page.getByRole("button", { name: "Sign out", exact: true })).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole("button", { name: "Sign out", exact: true })).toBeVisible();
+    const authenticated = await context.request.get(`${base}/api/users/me`);
+    expect(authenticated.status()).toBe(200);
+    expect((await authenticated.json()).id).toBe(liveAccount.id);
+    console.log("Email/password browser sign-in and session persistence passed");
   }
   await page.goto(base);
   await expect(
-    page.getByRole("heading", { name: "Create Workspace", exact: true }),
+    page.getByRole("heading", { name: "Create a workspace", exact: true }),
   ).toBeVisible();
   await expect(page.getByLabel("Username", { exact: true })).toHaveCount(0);
   await page.screenshot({

@@ -2,6 +2,8 @@ const mongoose = require('../runtime-mongoose');
 
 const schema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
+  authMode: { type: String, default: 'password' },
+  username: { type: String },
   name: { type: String, required: true, maxlength: 80 },
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   title: { type: String, default: '', maxlength: 80 },

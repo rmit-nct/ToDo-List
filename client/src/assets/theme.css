@@ -1,5 +1,6 @@
 /* Bridge the shared shell, Home, and global tokens through one root theme. */
 :root[data-theme='dark'] {
+  --surface: #211f2e;
   --bg: #171624;
   --surface2: #2b293c;
   --text: #f2f7fc;
