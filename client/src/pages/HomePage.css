@@ -46,3 +46,65 @@
     grid-template-columns: 1fr;
   }
 }
+
+.filters .sort-label {
+  margin-left: 12px;
+}
+
+.filters {
+  flex-wrap: wrap;
+  row-gap: 10px;
+}
+
+.task-status-charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 700px) {
+  .task-status-charts-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.task-status-chart {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px;
+  padding-bottom: 8px;
+  margin-bottom: 20px;
+}
+
+.task-status-chart-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+/* Prevent the reused .group-heading's own bottom margin from stacking
+   with .task-status-chart-heading's margin below it. */
+.task-status-chart-heading .group-heading {
+  margin-bottom: 0;
+}
+
+.overdue-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--coral);
+  background: color-mix(in srgb, var(--coral) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--coral) 35%, transparent);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.chart-slice-label {
+  fill: white;
+}
+
+.theme-dark .chart-slice-label {
+  fill: black;
+}

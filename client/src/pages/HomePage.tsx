@@ -1,11 +1,11 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Search, SlidersHorizontal, ArrowUpDown } from "lucide-react";
-import type { Task, TaskStatus, TaskPriority, TeamMember } from "../types";
-import { API_BASE_URL } from "../api";
+import type { Task, TaskStatus, TaskPriority } from "../types";
 import { useTasks } from "../taskStoreContext";
 import { TaskCard } from "../components/TaskCard";
 import { TaskModal } from "../components/TaskModal";
+import TaskStatusChart from "../components/TaskStatusChart";
 import "./HomePage.css";
 
 type SortOption = "Nearest Deadline" | "Newest";
@@ -14,11 +14,7 @@ function HomePage() {
   const { workspaceId } = useParams();
   const { tasks } = useTasks();
 
-  const [members, setMembers] = useState<TeamMember[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [modalTask, setModalTask] = useState<Task | null | undefined>(undefined);
-
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<TaskStatus | "All">("All");
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority | "All">("All");
@@ -29,57 +25,27 @@ function HomePage() {
     : null;
 
   let memberName = "there";
+  let memberId: string | null = null;
 
   if (identity) {
     try {
       const parsedIdentity = JSON.parse(identity);
-      if (parsedIdentity.name) {
-        memberName = parsedIdentity.name;
-      }
+      if (parsedIdentity.name) memberName = parsedIdentity.name;
+      if (parsedIdentity.id) memberId = parsedIdentity.id;
     } catch {
       memberName = "there";
     }
   }
 
-  useEffect(() => {
-    async function loadData() {
-      if (!workspaceId) {
-        setError("Workspace ID is missing.");
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        const workspaceRes = await fetch(
-          `${API_BASE_URL}/api/workspaces/${workspaceId}`
-        );
-
-        if (!workspaceRes.ok) {
-          const errorData = await workspaceRes.json();
-          throw new Error(errorData.error || "Failed to load workspace.");
-        }
-
-        const workspaceData = await workspaceRes.json();
-        setMembers(workspaceData.members ?? []);
-      } catch (err) {
-        console.error("HomePage load error:", err);
-        setError(err instanceof Error ? err.message : "Failed to load workspace.");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    loadData();
-  }, [workspaceId]);
-
-  const workspaceTasks = tasks.filter((task) => task.workspaceId === workspaceId);
+  const myTasks = tasks.filter(
+    (task) =>
+      task.workspaceId === workspaceId &&
+      (task.assignedMemberId === memberId || task.assignee?.id === memberId)
+  );
 
   const filteredTasks = useMemo(
     () =>
-      workspaceTasks.filter((task) => {
+      myTasks.filter((task) => {
         const matchesSearch = task.title.toLowerCase().includes(search.toLowerCase());
         const matchesStatus = statusFilter === "All" || task.status === statusFilter;
         const matchesPriority =
@@ -88,7 +54,7 @@ function HomePage() {
 
         return matchesSearch && matchesStatus && matchesPriority;
       }),
-    [workspaceTasks, search, statusFilter, priorityFilter]
+    [myTasks, search, statusFilter, priorityFilter]
   );
 
   const sortedTasks = useMemo(
@@ -102,22 +68,19 @@ function HomePage() {
     [filteredTasks, sortBy]
   );
 
-  const initials = (name: string) =>
-    name
-      .split(" ")
-      .map((part) => part[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase();
-
   return (
     <div className="page">
       <div className="page-heading">
         <div>
           <p>WORKSPACE OVERVIEW</p>
           <h1>Welcome back, {memberName}</h1>
-          <span>Here's everything happening in this workspace.</span>
+          <span>Here's what's on your plate in this workspace.</span>
         </div>
+      </div>
+
+      <div className="task-status-charts-row">
+        <TaskStatusChart title="My Progress" tasks={myTasks} />
+        <TaskStatusChart title="Workspace Progress" tasks={tasks} />
       </div>
 
       <section className="filters" aria-label="Task filters">
@@ -158,7 +121,7 @@ function HomePage() {
           <option value="low">Low</option>
         </select>
 
-        <span className="filter-label">
+        <span className="filter-label sort-label">
           <ArrowUpDown />
           Sort
         </span>
@@ -173,45 +136,25 @@ function HomePage() {
         </select>
       </section>
 
-      {isLoading ? (
-        <p className="status-message">Loading tasks...</p>
-      ) : error ? (
-        <p className="status-message" style={{ color: "#e53935" }}>
-          {error}
-        </p>
-      ) : sortedTasks.length === 0 ? (
-        <p className="status-message">No tasks match your filters.</p>
-      ) : (
-        <div className="task-list">
-          {sortedTasks.map((task) => (
-            <TaskCard task={task} onOpen={setModalTask} key={task.id} />
-          ))}
-        </div>
-      )}
-
-      <section className="task-group" aria-label="Team members">
+      <section className="task-group" aria-label="My tasks">
         <div className="group-heading">
           <div>
             <span className="group-dot blue" />
-            <h2>Team Members</h2>
-            <small>{members.length}</small>
+            <h2>My Tasks</h2>
+            <small>{sortedTasks.length}</small>
           </div>
         </div>
 
-        {members.length === 0 ? (
-          <p className="status-message">No members yet.</p>
+        {!memberId ? (
+          <p className="status-message">
+            We couldn't find your identity in this workspace. Try rejoining to see your tasks.
+          </p>
+        ) : sortedTasks.length === 0 ? (
+          <p className="status-message">No tasks assigned to you match your filters.</p>
         ) : (
-          <div className="member-grid">
-            {members.map((member) => (
-              <div className="member-chip" key={member.id}>
-                <span className="avatar">{initials(member.name)}</span>
-                <div>
-                  <p className="member-name">{member.name}</p>
-                  {member.email ? (
-                    <p className="member-email">{member.email}</p>
-                  ) : null}
-                </div>
-              </div>
+          <div className="task-list">
+            {sortedTasks.map((task) => (
+              <TaskCard task={task} onOpen={setModalTask} key={task.id} />
             ))}
           </div>
         )}
