@@ -234,6 +234,34 @@ app.get("/api/workspaces/:workspaceId", async (req: Request, res: Response) => {
   }
 });
 
+// --- PATCH /api/workspaces/:workspaceId ---
+// New in main: rename an existing workspace. Powers WorkspaceManagePage.tsx.
+app.patch("/api/workspaces/:workspaceId", async (req: Request, res: Response) => {
+  try {
+    const { workspaceId } = req.params;
+    const { name } = req.body;
+
+    if (!name || name.trim() === "") {
+      return res.status(400).json({ error: "Workspace name is required" });
+    }
+
+    const updatedWorkspace = await Workspace.findOneAndUpdate(
+      { id: workspaceId },
+      { name: name.trim() },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedWorkspace) {
+      return res.status(404).json({ error: "Workspace not found" });
+    }
+
+    res.json(updatedWorkspace);
+  } catch (error) {
+    console.error("Update workspace error:", error);
+    res.status(500).json({ error: "Failed to update workspace" });
+  }
+});
+
 // --- POST /api/workspaces/:workspaceId/members ---
 app.post("/api/workspaces/:workspaceId/members", async (req: Request, res: Response) => {
   try {
@@ -266,18 +294,59 @@ app.post("/api/workspaces/:workspaceId/members", async (req: Request, res: Respo
   }
 });
 
-// Using YOUR port (5000) since that's what the frontend currently calls.
-// If your teammate's frontend code calls 5001 anywhere, that needs updating too.
-const PORT = 5000;
+// --- Startup / shutdown ---
+// New in main: default port 5001 (matches the frontend's fallback in
+// client/src/api.ts), and if MONGODB_URI isn't set, spin up a local
+// in-memory MongoDB instead of requiring everyone to have a real Atlas
+// connection string just to run the app locally. Only hard-fails on a
+// missing URI in production.
+const PORT = Number(process.env.PORT || 5001);
 
-mongoose
-  .connect(process.env.MONGODB_URI as string)
-  .then(() => {
-    console.log("Connected to MongoDB Atlas");
-    app.listen(PORT, () => {
-      console.log(`Server running on http://localhost:${PORT}`);
+let localDatabase: import("mongodb-memory-server").MongoMemoryServer | undefined;
+let server: ReturnType<typeof app.listen> | undefined;
+
+async function start() {
+  let uri = process.env.MONGODB_URI?.trim();
+
+  if (!uri) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("MONGODB_URI is required in production");
+    }
+
+    const { MongoMemoryServer } = require("mongodb-memory-server");
+    const path = require("node:path");
+    const fs = require("node:fs/promises");
+
+    const dbPath = path.join(__dirname, ".mongodb-data");
+    await fs.mkdir(dbPath, { recursive: true });
+
+    localDatabase = await MongoMemoryServer.create({
+      instance: { dbPath, dbName: "neo-workspaces", storageEngine: "wiredTiger" },
     });
-  })
-  .catch((error) => {
-    console.error("MongoDB connection error:", error);
+
+    uri = localDatabase.getUri("neo-workspaces");
+  }
+
+  await mongoose.connect(uri as string);
+
+  server = app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
   });
+}
+
+async function shutdown() {
+  if (server) await new Promise((resolve) => server!.close(resolve));
+  await mongoose.disconnect();
+  await localDatabase?.stop();
+  process.exit(0);
+}
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
+
+start().catch(async (error) => {
+  console.error("Database startup failed:", error.message);
+  await mongoose.disconnect();
+  await localDatabase?.stop();
+  process.exit(1);
+});
