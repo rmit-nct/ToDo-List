@@ -86,7 +86,7 @@ export function AppShell({
     const controller = new AbortController()
     apiRequest<MemberIdentity>('/users/me', { signal: controller.signal }).then(setMember).catch(() => {}).finally(() => { if (!controller.signal.aborted) setIdentityLoading(false) })
     return () => controller.abort()
-  }, [workspaceId, workspaceData.workspace, workspaceData.loading])
+  }, [workspaceId, workspaceData.workspace, workspaceData.loading, workspaceData.currentMember])
 
   useEffect(() => {
     const handleWorkspaceUpdated = (

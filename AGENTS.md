@@ -12,7 +12,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 - Use GitHub account `myngoc0703` for every authenticated GitHub operation in this project. Verify `gh api user --jq .login` before pushing or creating pull requests; never fall back to another account.
 - Use `ngoc/` for feature branches. Preserve teammates' work and review current `origin/main` before integration.
-- Deploy this project to the Cloudflare `Skora Personal` account (owner of `ttr.gg`) with OpenNext/Wrangler. Keep releases on `ngoc/production-nextauth`; do not merge into main. Keep MongoDB directly in Atlas.
+- Deploy this project to the Cloudflare `Skora Personal` account (owner of `ttr.gg`) with OpenNext/Wrangler. Integrate changes on an `ngoc/` branch, merge into `main` after validation, and deploy the exact validated `main` commit. Keep MongoDB directly in Atlas.
 - Never commit credentials, connection strings, recovery keys, `.env` files, or database data.
 - Run the root Next.js app with `npm run dev`. Server code lives in `backend/` and is exposed through `app/api/`.
 - Validate with `npm run typecheck`, `npm run lint`, `npm run build`, isolated MongoDB integration tests, and browser QA before release. Never run destructive tests against an existing production workspace.

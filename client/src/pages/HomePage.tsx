@@ -1,3 +1,4 @@
+import TaskStatusChart from "../components/TaskStatusChart";
 import { WorkspaceActions } from "../components/WorkspaceActions";
 import { LoadingSkeleton, SkeletonLine } from "../components/LoadingSkeleton";
 import { useState } from "react";
@@ -85,6 +86,10 @@ export default function HomePage() {
         </Link>
       </div>}
 
+      {!isLoading && <div className="task-status-charts-row">
+        <TaskStatusChart title="My Progress" tasks={tasks.filter(task => (task.assignedMemberId || task.assignee?.id) === currentMember?.id)} />
+        <TaskStatusChart title="Workspace Progress" tasks={tasks} />
+      </div>}
       <section className="overview-filters" aria-label="Filter team tasks">
         <label className="overview-search">
           <Search size={18} />

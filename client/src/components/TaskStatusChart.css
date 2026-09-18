@@ -1,0 +1,14 @@
+.task-status-charts-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 22px; }
+.task-status-chart { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.task-status-chart-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.task-status-chart-heading h2 { font-size: 14px; margin: 0; }
+.task-status-chart-heading > span { font-size: 11px; color: var(--muted); }
+.task-status-chart-content { display: flex; align-items: center; gap: 20px; margin-top: 14px; }
+.task-status-ring { width: 82px; height: 82px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; }
+.task-status-ring > span { width: 62px; height: 62px; border-radius: 50%; background: var(--surface); display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; }
+.task-status-ring small { font-size: 10px; font-weight: 400; color: var(--muted); }
+.task-status-chart ul { list-style: none; margin: 0; padding: 0; flex: 1; font-size: 12px; }
+.task-status-chart li { display: flex; align-items: center; gap: 6px; margin: 6px 0; }
+.task-status-chart li i { width: 7px; height: 7px; border-radius: 50%; }
+.task-status-chart li strong { margin-left: auto; }
+@media(max-width: 600px) { .task-status-charts-row { grid-template-columns: 1fr; } }

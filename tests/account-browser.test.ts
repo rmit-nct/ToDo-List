@@ -336,3 +336,33 @@ test('skeletons replace loading text and empty states while data is pending', as
     assert.equal(memberReads, 0, 'Editor reuses loaded workspace members');
   } finally { await browser.close(); }
 });
+
+test('workspace reads are shared and returning task views stay usable during refresh', async () => {
+  const browser = await chromium.launch();
+  const context = await browser.newContext({ baseURL: base, viewport: { width: 1440, height: 1000 } });
+  const page = await context.newPage();
+  let release = () => {};
+  try {
+    const signup = await context.request.post('/api/auth/register', { headers: { Origin: base }, data: { name: 'Cache QA', email: `cache-${Date.now()}@example.test`, password: 'TemporaryPassword!123' } });
+    assert.equal(signup.status(), 201);
+    const account = await signup.json();
+    const workspace = await (await context.request.post('/api/workspaces', { headers: { Origin: base }, data: { workspaceName: 'Cache QA', creatorName: 'Owner' } })).json();
+    await context.request.post('/api/tasks', { headers: { Origin: base }, data: { workspaceId: workspace.id, title: 'Cached task', status: 'todo', priority: 'medium', dueDate: '2026-09-20', assignedMemberId: account.id } });
+    let reads = 0;
+    page.on('request', request => { if (request.url().endsWith(`/api/workspaces/${workspace.id}`)) reads++; });
+    await page.goto(`/workspace/${workspace.id}/app/home`);
+    await expect(page.getByRole('button', { name: 'Edit Cached task', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'New task', exact: true }).click();
+    await expect(page.getByLabel('Assignee', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+    assert.equal(reads, 1, 'Sidebar, overview and editor share one workspace read');
+    await page.getByRole('link', { name: 'My Tasks', exact: true }).click();
+    await expect(page.getByRole('status', { name: 'Loading your tasks', exact: true })).toHaveCount(0);
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    await page.route('**/api/tasks?**', async route => { await gate; await route.continue(); });
+    await page.getByRole('link', { name: 'Home', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Edit Cached task', exact: true })).toBeVisible();
+    await expect(page.getByRole('status', { name: 'Loading tasks', exact: true })).toHaveCount(0);
+    assert.equal(reads, 1, 'Navigation reuses workspace data');
+  } finally { release(); await browser.close(); }
+});
