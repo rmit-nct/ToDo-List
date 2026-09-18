@@ -1,6 +1,7 @@
+import { useWorkspaceMembers } from "../useWorkspaceMembers"
 import { SkeletonLine } from "./LoadingSkeleton"
 import { useTheme } from '../themeContext'
-import { API_BASE_URL, apiFetch } from '../api'
+import { apiRequest } from '../api'
 import { useTasks } from '../taskStoreContext'
 
 import {
@@ -74,60 +75,18 @@ export function AppShell({
   const [member, setMember] =
     useState<MemberIdentity | null>(null)
 
+  const workspaceData = useWorkspaceMembers(workspaceId || '')
   useEffect(() => {
-    setIdentityLoading(true)
-    if (!workspaceId) {
-      apiFetch(`${API_BASE_URL}/api/users/me`).then(response => response.ok ? response.json() : null).then(setMember).catch(() => setMember(null)).finally(() => setIdentityLoading(false))
-      setWorkspace(null)
+    if (workspaceId) {
+      setIdentityLoading(workspaceData.loading)
+      setWorkspace(workspaceData.workspace ? { id: workspaceData.workspace.id, name: workspaceData.workspace.name } : null)
+      setMember(workspaceData.currentMember ? { ...workspaceData.currentMember, workspaceId } : null)
       return
     }
-
-    const savedIdentity = localStorage.getItem(
-      `memberIdentity:${workspaceId}`
-    )
-
-    if (savedIdentity) {
-      try {
-        const parsedIdentity =
-          JSON.parse(savedIdentity)
-
-        setMember(parsedIdentity)
-      } catch {
-        setMember(null)
-      }
-    }
-
-    const loadWorkspace = async () => {
-      try {
-        const response = await apiFetch(
-          `${API_BASE_URL}/api/workspaces/${workspaceId}`
-        )
-
-        if (!response.ok) {
-          throw new Error(
-            'Failed to load workspace'
-          )
-        }
-
-        const data = await response.json()
-        if (data.ownerId) {
-          setMember(data.members.find((item: MemberIdentity) => item.id === data.currentMemberId) || null)
-        }
-
-        setWorkspace({
-          id: data.id,
-          name: data.name,
-        })
-      } catch (error) {
-        console.error(
-          'Workspace load error:',
-          error
-        )
-      }
-    }
-
-    void loadWorkspace().finally(() => setIdentityLoading(false))
-  }, [workspaceId])
+    const controller = new AbortController()
+    apiRequest<MemberIdentity>('/users/me', { signal: controller.signal }).then(setMember).catch(() => {}).finally(() => { if (!controller.signal.aborted) setIdentityLoading(false) })
+    return () => controller.abort()
+  }, [workspaceId, workspaceData.workspace, workspaceData.loading])
 
   useEffect(() => {
     const handleWorkspaceUpdated = (

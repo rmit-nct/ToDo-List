@@ -7,7 +7,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import { ArrowRight, Moon, Sun } from "lucide-react";
-import { ApiError, apiRequest } from "../api";
+import { ApiError, apiRequest, readCache } from "../api";
 import { BrandLogo } from "../components/BrandLogo";
 import CreateWorkspaceForm from "../components/CreateWorkspaceForm";
 import { useTheme } from "../themeContext";
@@ -30,28 +30,21 @@ export function AccountPage() {
     location.pathname === "/account/email" ? "email" : "username",
   );
   const { dark, toggleTheme } = useTheme();
-  const [account, setAccount] = useState<Account | null>(null);
-  const [workspaces, setWorkspaces] = useState<WorkspaceSummary[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [account, setAccount] = useState<Account | null>(() => readCache.peek<Account>("/users/me") || null);
+  const [workspaces, setWorkspaces] = useState<WorkspaceSummary[]>(() => readCache.peek<WorkspaceSummary[]>("/users/me/workspaces") || []);
+  const [loading, setLoading] = useState(!readCache.peek("/users/me") || !readCache.peek("/users/me/workspaces"));
   const [register, setRegister] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [invite, setInvite] = useState("");
   useEffect(() => {
     let active = true;
-    apiRequest<Account>("/users/me")
-      .then(async (user) => {
-        const list = await apiRequest<WorkspaceSummary[]>(
-          "/users/me/workspaces",
-        );
-        if (active) {
-          setAccount(user);
-          setWorkspaces(list);
-        }
+    Promise.all([apiRequest<Account>("/users/me"), apiRequest<WorkspaceSummary[]>("/users/me/workspaces")])
+      .then(([user, list]) => {
+        if (active) { setAccount(user); setWorkspaces(list); }
       })
       .catch((reason) => {
-        if (active && !(reason instanceof ApiError && reason.status === 401))
-          setError(reason.message);
+        if (active) { setAccount(null); setWorkspaces([]); if (!(reason instanceof ApiError && reason.status === 401)) setError(reason.message); }
       })
       .finally(() => {
         if (active) setLoading(false);

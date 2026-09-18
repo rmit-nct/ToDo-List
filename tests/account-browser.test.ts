@@ -328,14 +328,11 @@ test('skeletons replace loading text and empty states while data is pending', as
     }
     await page.goto(`/workspace/${workspace.id}/app/home`);
     await expect(page.getByRole('button', { name: 'New task', exact: true })).toBeEnabled();
-    let releaseMembers!: () => void;
-    const membersGate = new Promise<void>(resolve => { releaseMembers = resolve; });
-    await page.route(`**/api/workspaces/${workspace.id}`, async route => { await membersGate; await route.continue(); });
+    let memberReads = 0;
+    page.on('request', request => { if (request.url().endsWith(`/api/workspaces/${workspace.id}`)) memberReads++; });
     await page.getByRole('button', { name: 'New task', exact: true }).click();
-    try {
-      await expect(page.getByRole('status', { name: 'Loading teammates', exact: true })).toBeVisible();
-      await expect(page.getByRole('button', { name: 'Create task', exact: true })).toBeDisabled();
-    } finally { releaseMembers(); }
+    await expect(page.getByRole('status', { name: 'Loading teammates', exact: true })).toHaveCount(0);
     await expect(page.getByLabel('Assignee', { exact: true })).toBeVisible();
+    assert.equal(memberReads, 0, 'Editor reuses loaded workspace members');
   } finally { await browser.close(); }
 });

@@ -71,11 +71,13 @@ export class OptimisticTasks {
         : () => true;
       this.publish(this.snapshot.error, false);
     } catch (reason) {
-      if (!signal.aborted && revision === this.revision)
+      if (!signal.aborted && revision === this.revision) {
+        if (reason && typeof reason === 'object' && 'status' in reason && (reason.status === 401 || reason.status === 403)) this.confirmed = [];
         this.publish(
           reason instanceof Error ? reason.message : "Unable to load tasks.",
           false,
         );
+      }
     }
   }
   private change(

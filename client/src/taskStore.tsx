@@ -9,6 +9,21 @@ import { apiRequest } from "./api";
 import { TaskStore, type TaskStoreValue } from "./taskStoreContext";
 import { OptimisticTasks } from "./optimisticTasks";
 
+const stores = new Map<string, OptimisticTasks>();
+if (typeof window !== 'undefined') window.addEventListener('session-changed', () => stores.clear());
+function cachedStore(key: string) {
+  let store = stores.get(key);
+  if (!store) {
+    if (stores.size >= 20) {
+      const idle = [...stores].find(([, value]) => value.getSnapshot().pendingCount === 0);
+      if (idle) stores.delete(idle[0]);
+    }
+    store = new OptimisticTasks(apiRequest);
+    stores.set(key, store);
+  }
+  return store;
+}
+
 export function TaskStoreProvider({
   children,
   mine = false,
@@ -22,7 +37,7 @@ export function TaskStoreProvider({
 
 function TaskStoreScope({ children, workspaceId, mine }: { children: ReactNode; workspaceId?: string; mine: boolean }) {
   // Keying this scope prevents the previous workspace’s cache from leaking.
-  const store = useMemo(() => new OptimisticTasks(apiRequest), []);
+  const store = useMemo(() => cachedStore(`${workspaceId || "all"}:${mine}`), [workspaceId, mine]);
   const state = useSyncExternalStore(
     store.subscribe,
     store.getSnapshot,
