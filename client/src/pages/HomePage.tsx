@@ -40,10 +40,6 @@ function HomePage() {
   const [sortBy, setSortBy] =
     useState<SortOption>("Nearest Deadline");
 
-  // --- Add member form state, unchanged ---
-  const [newName, setNewName] = useState("");
-  const [newEmail, setNewEmail] = useState("");
-
   // useEffect runs code automatically when the component first appears on screen.
   // The empty array [] at the end means "only run this once, not on every re-render."
   useEffect(() => {
@@ -156,61 +152,6 @@ function HomePage() {
     }
 
     return "Unassigned";
-  }
-
-  // Now actually calls the real backend instead of just updating local state
-  async function handleAddMember(
-    e: React.FormEvent
-  ) {
-    e.preventDefault();
-
-    if (
-      newName.trim() === "" ||
-      !workspaceId
-    ) {
-      return;
-    }
-
-    try {
-      const res = await fetch(
-        `${API_BASE_URL}/api/workspaces/${workspaceId}/members`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-          body: JSON.stringify({
-            name: newName,
-            email:
-              newEmail.trim() === ""
-                ? undefined
-                : newEmail,
-          }),
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error(
-          "Failed to add member."
-        );
-      }
-
-      const createdMember =
-        await res.json();
-
-      setMembers([
-        ...members,
-        createdMember,
-      ]);
-
-      setNewName("");
-      setNewEmail("");
-    } catch (err) {
-      setError(
-        "Could not add member. Try again."
-      );
-    }
   }
 
   return (
@@ -379,53 +320,6 @@ function HomePage() {
           )}
         </ul>
       )}
-
-      <form
-        className="member-form"
-        onSubmit={handleAddMember}
-      >
-        <label
-          htmlFor="member-name"
-          className="visually-hidden"
-        >
-          Member name
-        </label>
-
-        <input
-          id="member-name"
-          type="text"
-          placeholder="Name"
-          value={newName}
-          onChange={(e) =>
-            setNewName(
-              e.target.value
-            )
-          }
-        />
-
-        <label
-          htmlFor="member-email"
-          className="visually-hidden"
-        >
-          Member email (optional)
-        </label>
-
-        <input
-          id="member-email"
-          type="email"
-          placeholder="Email (optional)"
-          value={newEmail}
-          onChange={(e) =>
-            setNewEmail(
-              e.target.value
-            )
-          }
-        />
-
-        <button type="submit">
-          Add Member
-        </button>
-      </form>
     </div>
   );
 }

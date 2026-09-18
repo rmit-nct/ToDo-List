@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon --exec ts-node server.ts",
+    "dev": "nodemon --exec tsx server.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -23,6 +23,7 @@
     "@types/node": "^22.20.2",
     "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
+    "tsx": "^4.23.13",
     "typescript": "^7.0.2"
   }
 }
