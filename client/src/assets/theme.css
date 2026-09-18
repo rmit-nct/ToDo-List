@@ -1,0 +1,25 @@
+/* Bridge the shared shell, Home, and global tokens through one root theme. */
+:root[data-theme='dark'] {
+  --bg: #171624;
+  --surface2: #2b293c;
+  --text: #f2f7fc;
+  --text-muted: #bac2cf;
+  --border: #383849;
+  --accent: #8ce7ff;
+  --tag-todo: #263847;
+  --tag-todo-text: #8ce7ff;
+  --tag-inprog: #493f26;
+  --tag-inprog-text: #ffe120;
+  --tag-done: #203d33;
+  --tag-done-text: #98deb3;
+}
+html { background: var(--canvas); }
+body { background: var(--canvas); color: var(--ink); }
+.sidebar-footer a.active { background: #364364; color: #fff; }
+[data-theme='dark'] .landing-entry { background: var(--canvas); }
+[data-theme='dark'] .landing-entry-heading h2,
+[data-theme='dark'] .workspace-form-field,
+[data-theme='dark'] .workspace-entry-title { color: var(--ink); }
+[data-theme='dark'] .landing-entry-heading p { color: var(--muted); }
+[data-theme='dark'] .workspace-form-field input { background: var(--surface); color: var(--ink); border-color: var(--line); }
+@media (prefers-reduced-motion: reduce) { .app { transition: none; } }

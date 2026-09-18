@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
-import { API_BASE_URL } from '../api'
+import { API_BASE_URL, apiFetch } from '../api'
 
 const createWorkspaceSchema = z.object({
   workspaceName: z
@@ -58,7 +58,7 @@ function CreateWorkspaceForm() {
       setIsSubmitting(true)
       setServerError(null)
 
-      const response = await fetch(
+      const response = await apiFetch(
         `${API_BASE_URL}/api/workspaces`,
         {
           method: 'POST',

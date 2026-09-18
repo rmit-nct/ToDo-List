@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { useParams } from 'react-router-dom'
 
-import { API_BASE_URL } from '../api'
+import { API_BASE_URL, apiFetch } from '../api'
 import type { TeamMember } from '../types'
 
 type WorkspaceResponse = {
@@ -54,7 +54,7 @@ export function WorkspaceManagePage() {
         setIsLoading(true)
         setError(null)
 
-        const response = await fetch(
+        const response = await apiFetch(
           `${API_BASE_URL}/api/workspaces/${workspaceId}`
         )
 
@@ -104,7 +104,7 @@ export function WorkspaceManagePage() {
       setError(null)
       setSaved(false)
 
-      const response = await fetch(
+      const response = await apiFetch(
         `${API_BASE_URL}/api/workspaces/${workspaceId}`,
         {
           method: 'PATCH',
