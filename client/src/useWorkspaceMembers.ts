@@ -13,13 +13,17 @@ export function useWorkspaceMembers(workspaceId: string) {
     const cached = readCache.peek<WorkspaceData>(path)
     setLoading(!cached); setWorkspace(cached); setError(null)
     if (!workspaceId) { setLoading(false); return }
-    apiRequest<WorkspaceData>(path, { signal: controller.signal })
+    const load = () => apiRequest<WorkspaceData>(path, { signal: controller.signal })
       .then(data => { if (!controller.signal.aborted) setWorkspace(data) })
       .catch((reason: unknown) => {
         if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : 'Unable to load workspace members.')
       })
       .finally(() => { if (!controller.signal.aborted) setLoading(false) })
-    return () => controller.abort()
+    void load()
+    const onFocus = () => { if (document.visibilityState === 'visible') void load() }
+    const timer = window.setInterval(onFocus, 15000)
+    window.addEventListener('focus', onFocus)
+    return () => { controller.abort(); window.clearInterval(timer); window.removeEventListener('focus', onFocus) }
   }, [workspaceId, path, revision])
   const workspaceMembers: Member[] = useMemo(() => (workspace?.members || []).map(member => ({ ...member, initials: member.name.split(/\s+/).filter(Boolean).map(part => part[0]).join('').slice(0, 2).toUpperCase(), color: '#4896ac' })), [workspace])
   let memberId = workspace?.currentMemberId
