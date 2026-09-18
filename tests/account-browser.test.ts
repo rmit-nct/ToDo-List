@@ -200,3 +200,55 @@ test('assignment, optimistic editing and dragging reconcile with saved data and 
     assert.deepEqual(pageErrors, []);
   } finally { await browser.close(); }
 });
+
+test('one account settings entry and accessible theme controls fit desktop and narrow screens', async () => {
+  const browser = await chromium.launch();
+  const context = await browser.newContext({ baseURL: base, viewport: { width: 1440, height: 1000 } });
+  const page = await context.newPage();
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  try {
+    const signup = await context.request.post('/api/auth/register', { headers: { Origin: base }, data: { name: 'Settings Layout Owner With A Long Name', email: `layout-${Date.now()}@example.test`, password: 'TemporaryPassword!123' } });
+    assert.equal(signup.status(), 201);
+    const workspace = await (await context.request.post('/api/workspaces', { headers: { Origin: base }, data: { workspaceName: 'Settings layout', creatorName: 'Owner', requireAccount: true } })).json();
+    await page.goto(`/workspace/${workspace.id}/app/home`);
+    await expect(page.locator('.sidebar-footer a')).toHaveCount(1);
+    await page.getByRole('link', { name: 'Account settings', exact: true }).click();
+    await expect(page).toHaveURL(`${base}/workspace/${workspace.id}/app/settings`);
+    await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Account settings', exact: true })).toHaveAttribute('aria-current', 'page');
+    const theme = page.getByRole('group', { name: 'Color theme', exact: true });
+    await expect(theme).toBeVisible();
+    for (const option of ['Light', 'Dark', 'System']) {
+      await theme.getByRole('radio', { name: option, exact: true }).check();
+      await expect(theme.getByRole('radio', { name: option, exact: true })).toBeChecked();
+    }
+    await theme.getByRole('radio', { name: 'Dark', exact: true }).check();
+    await page.reload();
+    await expect(theme.getByRole('radio', { name: 'Dark', exact: true })).toBeChecked();
+    await theme.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: '/tmp/nct-settings-desktop.png', animations: 'disabled' });
+    for (const width of [390, 320]) {
+      await page.setViewportSize({ width, height: 844 });
+      await theme.scrollIntoViewIfNeeded();
+      await expect.poll(async () => (await page.locator('.sidebar').boundingBox())!.x).toBeLessThan(-250);
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+      assert.ok(await theme.evaluate(element => element.scrollWidth <= element.clientWidth));
+      const legend = await theme.locator('legend').boundingBox();
+      assert.ok(legend && legend.width <= 1 && legend.height <= 1);
+      for (const radio of await theme.getByRole('radio').all()) {
+        const bounds = await radio.boundingBox();
+        assert.ok(bounds && bounds.x >= 0 && bounds.x + bounds.width <= width);
+      }
+      await page.screenshot({ path: `/tmp/nct-settings-${width}.png`, animations: 'disabled' });
+    }
+    await theme.getByRole('radio', { name: 'Light', exact: true }).focus();
+    await page.keyboard.press('Space');
+    await page.keyboard.press('ArrowRight');
+    await expect(theme.getByRole('radio', { name: 'Dark', exact: true })).toBeChecked();
+    await page.getByRole('button', { name: 'Open menu', exact: true }).click();
+    await page.getByRole('link', { name: 'Account settings', exact: true }).click();
+    await expect(page.locator('.sidebar')).not.toHaveClass(/open/);
+    assert.deepEqual(errors, []);
+  } finally { await browser.close(); }
+});

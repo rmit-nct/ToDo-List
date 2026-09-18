@@ -345,27 +345,11 @@ export function AppShell({
       </nav>
 
       <div className="sidebar-footer">
-        <NavLink to={workspaceId ? `/workspace/${workspaceId}/app/settings` : "/account"} onClick={() => setMenuOpen(false)}><Settings />Settings</NavLink>
-
-        <Link className="profile" aria-label="Open profile settings" to={workspaceId ? `/workspace/${workspaceId}/app/settings#profile` : "/account"} onClick={() => setMenuOpen(false)}>
-          <span className="avatar">
-            {getInitials(member?.name)}
-          </span>
-
-          <div>
-            <strong>
-              {member?.name ??
-                'Workspace Member'}
-            </strong>
-
-            <small>
-              {member?.email ||
-                'No email'}
-            </small>
-          </div>
-
-          <ChevronDown />
-        </Link>
+        <NavLink className="profile account-settings-link" aria-label="Account settings" to={workspaceId ? `/workspace/${workspaceId}/app/settings` : "/account"} onClick={() => setMenuOpen(false)}>
+          <span className="avatar" aria-hidden="true">{getInitials(member?.name)}</span>
+          <div><strong>{member?.name ?? 'Your account'}</strong><small>Account &amp; settings</small></div>
+          <Settings aria-hidden="true" />
+        </NavLink>
       </div>
     </>
   )

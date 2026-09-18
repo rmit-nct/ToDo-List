@@ -32,3 +32,9 @@ html[data-theme-changing] *::before,
 html[data-theme-changing] *::after {
   transition: none !important;
 }
+
+.sidebar-footer .account-settings-link { margin-top: 0; padding: 12px; gap: 10px; border: 1px solid transparent; text-decoration: none; }
+.account-settings-link .avatar, .account-settings-link > svg { flex-shrink: 0; }
+.account-settings-link strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sidebar-footer .account-settings-link small { display: block; color: #bac2cf; margin-top: 3px; }
+.sidebar-footer .account-settings-link.active { border-color: #8ce7ff66; }
