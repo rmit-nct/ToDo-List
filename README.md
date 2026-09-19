@@ -13,6 +13,10 @@ npm run dev
 
 Configure local environment variables from the root `.env.example`. Follow [the teammate Atlas setup guide](docs/atlas-setup.md) to connect to `neo_todo` using your own ignored `.env.local`. Never commit environment files or database data. MongoDB stays in Atlas for production; tests use a disposable MongoDB instance.
 
+`npm run dev` inside `client/` also starts the root Next.js app. Install root dependencies first. Username sign-in needs the Next.js `/api/username/*` routes; the standalone Express server does not provide them.
+
+For optional Vite-only frontend development, keep the root Next.js server running on port 3000, then run `npm ci && npm run dev:vite` inside `client/`. Its `/api` proxy targets Next.js on port 3000 (override with `VITE_API_TARGET` if needed). Include the Vite origin in `APP_ORIGINS`, as shown in `.env.example`.
+
 ## Validation
 
 ```sh

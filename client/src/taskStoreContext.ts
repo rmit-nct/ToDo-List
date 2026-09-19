@@ -8,6 +8,7 @@ export interface TaskStoreValue {
   isLoading: boolean;
   pendingCount: number;
   clearError: () => void;
+  refreshTasks: () => void;
 
   saveTask: (task: Task) => Promise<void>;
 

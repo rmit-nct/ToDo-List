@@ -101,3 +101,18 @@ test("failed edit rolls back and reassignment removes tasks from My Tasks immedi
   await rejected;
   assert.equal(store.getSnapshot().tasks[0].assignedMemberId, "me");
 });
+
+test('failed task reads recover and clear only load errors, including empty assignments', async () => {
+  let fail = true;
+  const store = new OptimisticTasks((async () => {
+    if (fail) throw new Error('Temporary outage');
+    return [];
+  }) as never);
+  await store.refresh('/tasks', new AbortController().signal);
+  assert.equal(store.getSnapshot().error, 'Temporary outage');
+  fail = false;
+  await store.refresh('/tasks', new AbortController().signal);
+  assert.equal(store.getSnapshot().error, null);
+  assert.equal(store.getSnapshot().isLoading, false);
+  assert.deepEqual(store.getSnapshot().tasks, []);
+});

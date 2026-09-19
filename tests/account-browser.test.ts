@@ -454,3 +454,67 @@ test('invite links preserve sign-in return, skip duplicate identity and codes ac
     await expect(page.getByRole('heading', { name: 'Today Dashboard', exact: true })).toBeVisible();
   } finally { await browser.close(); }
 });
+
+test('workspace action icons and labels are centered on every page in both themes', async () => {
+  const browser = await chromium.launch();
+  const context = await browser.newContext({ baseURL: base, viewport: { width: 1440, height: 1000 } });
+  const page = await context.newPage();
+  try {
+    const signup = await context.request.post('/api/auth/register', { headers: { Origin: base }, data: { name: 'Alignment QA', email: `align-${Date.now()}@example.test`, password: 'TemporaryPassword!123' } });
+    assert.equal(signup.status(), 201);
+    const workspace = await (await context.request.post('/api/workspaces', { headers: { Origin: base }, data: { workspaceName: 'Alignment QA', creatorName: 'Owner' } })).json();
+    for (const route of ['home', 'today', 'board']) {
+      await page.goto(`/workspace/${workspace.id}/app/${route}`);
+      await expect(page.locator('.workspace-actions button')).toHaveCount(3);
+      for (const theme of ['light', 'dark']) {
+        if (await page.locator('html').getAttribute('data-theme') !== theme) await page.locator('.workspace-actions').getByRole('button', { name: theme === 'dark' ? 'Dark' : 'Light', exact: true }).click();
+        for (const width of [1440, 390]) {
+          await page.setViewportSize({ width, height: 1000 });
+          const measurements = await page.locator('.workspace-actions button').evaluateAll(buttons => buttons.map(button => {
+            const box = button.getBoundingClientRect();
+            const icon = button.querySelector('svg')!.getBoundingClientRect();
+            const label = button.querySelector('span');
+            const text = label && getComputedStyle(label).display !== 'none' ? label.getBoundingClientRect() : null;
+            return { iconOffset: Math.abs(icon.y + icon.height / 2 - box.y - box.height / 2), textOffset: text ? Math.abs(text.y + text.height / 2 - box.y - box.height / 2) : 0, right: box.right };
+          }));
+          assert.ok(measurements.every(item => item.iconOffset <= 1 && item.textOffset <= 1 && item.right <= width), `${route} ${theme} ${width}: ${JSON.stringify(measurements)}`);
+          if (route === 'today' && theme === 'dark') await page.screenshot({ path: `/tmp/nct-centered-actions-${width}.png`, animations: 'disabled' });
+        }
+      }
+    }
+  } finally { await browser.close(); }
+});
+
+test('My Tasks retries transient reads and recovers in place without false zero counts', async () => {
+  const browser = await chromium.launch();
+  const context = await browser.newContext({ baseURL: base });
+  const page = await context.newPage();
+  let release = () => {};
+  try {
+    const response = await context.request.post('/api/auth/register', { headers: { Origin: base }, data: { name: 'Retry QA', email: `retry-${Date.now()}@example.test`, password: 'TemporaryPassword!123' } });
+    assert.equal(response.status(), 201);
+    const user = await response.json();
+    const workspace = await (await context.request.post('/api/workspaces', { headers: { Origin: base }, data: { workspaceName: 'Retry QA', creatorName: 'Owner' } })).json();
+    await context.request.post('/api/tasks', { headers: { Origin: base }, data: { workspaceId: workspace.id, title: 'Recovered assignment', assignedMemberId: user.id, status: 'todo', priority: 'medium', dueDate: '2026-09-20' } });
+    let reads = 0, documents = 0, failing = true;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    page.on('request', req => { if (req.isNavigationRequest() && req.frame() === page.mainFrame()) documents++; });
+    await page.route('**/api/users/me/tasks', async route => {
+      reads++;
+      if (failing) await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'Temporary read failure' }) });
+      else { await gate; await route.continue(); }
+    });
+    await page.goto(`/workspace/${workspace.id}/app/my-tasks`);
+    await expect(page.getByRole('heading', { name: 'Assignments couldn’t be loaded' })).toBeVisible();
+    assert.ok(reads >= 2, 'A transient read is retried');
+    await expect(page.getByText('0 tasks assigned to you', { exact: true })).toHaveCount(0);
+    failing = false;
+    await page.getByRole('button', { name: 'Retry', exact: true }).click();
+    await expect(page.getByRole('status', { name: 'Loading your tasks', exact: true })).toBeVisible();
+    release();
+    await expect(page.getByRole('button').filter({ hasText: 'Recovered assignment' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Assignments couldn’t be loaded' })).toHaveCount(0);
+    await expect(page.locator('.sync-messages [role="alert"]')).toHaveCount(0);
+    assert.equal(documents, 1, 'Retry does not reload the app');
+  } finally { release(); await browser.close(); }
+});

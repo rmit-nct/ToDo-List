@@ -23,7 +23,7 @@ MONGODB_DB=nct-isolated-qa
 MONGODB_COLLECTION_PREFIX=original_
 NEXTAUTH_SECRET=${randomBytes(32).toString("hex")}
 NEXTAUTH_URL=http://localhost:3100
-APP_ORIGINS=http://localhost:3100,http://nct-todo.ttr.gg
+APP_ORIGINS=http://localhost:3100,http://localhost:5173,http://nct-todo.ttr.gg
 `,
     { mode: 0o600, flag: "wx" },
   );
@@ -53,7 +53,7 @@ const child = spawn(
       MONGODB_COLLECTION_PREFIX: "original_",
       NEXTAUTH_SECRET: randomBytes(32).toString("hex"),
       NEXTAUTH_URL: "http://localhost:3100",
-      APP_ORIGINS: "http://localhost:3100",
+      APP_ORIGINS: "http://localhost:3100,http://localhost:5173",
     },
   },
 );

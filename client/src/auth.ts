@@ -11,11 +11,10 @@ export type Account = {
 };
 
 export async function signInWithUsername(username: string) {
-  const csrfResponse = await fetch("/api/username/csrf");
-  const { csrfToken } = await csrfResponse.json();
-  if (!csrfResponse.ok || !csrfToken)
+  const { csrfToken } = await apiRequest<{ csrfToken?: string }>("/username/csrf");
+  if (!csrfToken)
     throw new Error("Unable to start sign-in. Please try again.");
-  const response = await fetch("/api/username/callback/credentials", {
+  const result = await apiRequest<{ url?: string }>("/username/callback/credentials", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -25,9 +24,7 @@ export async function signInWithUsername(username: string) {
       callbackUrl: `${window.location.origin}/account`,
     }),
   });
-  const result = await response.json();
   if (
-    !response.ok ||
     !result.url ||
     new URL(result.url, window.location.origin).searchParams.has("error")
   )
