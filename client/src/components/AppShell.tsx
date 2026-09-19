@@ -241,11 +241,6 @@ export function AppShell({
           Homepage
         </NavLink>
 
-        <NavLink to={workspaceId ? `/workspace/${workspaceId}/app/my-tasks` : "/tasks"} onClick={() => setMenuOpen(false)}>
-          <UserRoundCheck />
-          My Tasks
-        </NavLink>
-
         {workspaceId && <div className="workspace-select-container">
           <div className="workspace-select central-workspace">
             <button

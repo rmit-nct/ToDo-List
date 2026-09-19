@@ -6,7 +6,6 @@ import {
 } from 'react-router-dom'
 
 import LandingPage from './pages/LandingPage'
-import { MyTasksPage } from './pages/MyTasksPage'
 import HomePage from './pages/HomePage'
 import { AppShell } from './components/AppShell'
 import { TodayDashboard } from './pages/TodayDashboard'
@@ -24,7 +23,6 @@ function WorkspaceApp() {
     <TaskStoreProvider>
       <AppShell>
         <Routes>
-          <Route path="my-tasks" element={<TaskStoreProvider mine><MyTasksPage /></TaskStoreProvider>} />
           <Route path="settings" element={<SettingsPage />} />
           <Route
             path="home"
@@ -69,11 +67,6 @@ function App() {
         <Route
           path="/"
           element={<LandingPage />}
-        />
-
-        <Route
-          path="/tasks"
-          element={<TaskStoreProvider mine><AppShell><MyTasksPage /></AppShell></TaskStoreProvider>}
         />
 
         <Route
