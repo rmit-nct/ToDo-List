@@ -1,3 +1,4 @@
+import { joinWorkspace } from "../joinWorkspace";
 import { LoadingSkeleton } from "../components/LoadingSkeleton";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
@@ -102,14 +103,7 @@ export function AccountPage() {
       const workspace = await apiRequest<{ id: string }>(
         `/invites/${encodeURIComponent(invite.trim())}`,
       );
-      const member = await apiRequest(`/workspaces/${workspace.id}/members`, {
-        method: "POST",
-        body: JSON.stringify({ name: account?.name, email: account?.email }),
-      });
-      localStorage.setItem(
-        `memberIdentity:${workspace.id}`,
-        JSON.stringify(member),
-      );
+      await joinWorkspace(workspace.id, { name: account?.name, email: account?.email });
       navigate(`/workspace/${workspace.id}/app/today`);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Unable to join.");
@@ -213,6 +207,10 @@ export function AccountPage() {
                       value={invite}
                       onChange={(event) => setInvite(event.target.value)}
                       placeholder="NCT-…"
+                      autoCapitalize="characters"
+                      autoComplete="off"
+                      spellCheck={false}
+                      maxLength={80}
                     />
                   </label>
                   <button className="primary" disabled={busy}>

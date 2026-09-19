@@ -428,9 +428,10 @@ app.patch("/api/workspaces/:workspaceId", async (req, res) => {
 app.post("/api/workspaces/:workspaceId/members", async (req, res) => {
   try {
     const { workspaceId } = req.params;
-    const { name, email } = req.body;
+    const name = req.account?.name || req.body.name;
+    const email = req.body.email;
 
-    if (!name || name.trim() === "") {
+    if (typeof name !== "string" || name.trim() === "") {
       return res.status(400).json({
         error: "Name is required",
       });
@@ -481,7 +482,7 @@ app.post("/api/workspaces/:workspaceId/members", async (req, res) => {
 });
 
 app.get('/api/invites/:code', async (req, res) => {
-  const workspace = await Workspace.findOne({ inviteCode: req.params.code.toUpperCase(), deleting: { $ne: true } });
+  const workspace = await Workspace.findOne({ inviteCode: req.params.code.trim().toUpperCase(), deleting: { $ne: true } });
   if (!workspace) return res.status(404).json({ error: 'Invite code not found.' });
   res.json({ id: workspace.id, name: workspace.name });
 });

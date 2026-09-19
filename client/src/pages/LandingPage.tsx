@@ -8,7 +8,8 @@ import {
 
 import JoinWorkspaceForm from '../components/JoinWorkspaceForm'
 import CreateWorkspaceForm from '../components/CreateWorkspaceForm'
-import { API_BASE_URL, apiFetch } from '../api'
+import { ApiError, apiRequest } from '../api'
+import type { Account } from '../auth'
 
 import './LandingPage.css'
 import { LandingPromo } from '../components/LandingPromo'
@@ -21,53 +22,35 @@ function LandingPage() {
   const [workspaceExists, setWorkspaceExists] =
     useState<boolean | null>(null)
 
+  const [account, setAccount] = useState<Account | null>(null)
+  const [requiresAccount, setRequiresAccount] = useState(false)
+  const [loadError, setLoadError] = useState('')
+  const [retry, setRetry] = useState(0)
   useEffect(() => {
-    if (!workspaceId) {
-      setHasJoined(false)
-      setWorkspaceExists(null)
-      return
-    }
-
-    const identity = localStorage.getItem(`memberIdentity:${workspaceId}`)
-
-    setHasJoined(identity !== null)
-
-    const checkWorkspace = async () => {
-      try {
-        const response = await apiFetch(
-          `${API_BASE_URL}/api/workspaces/${workspaceId}`
-        )
-
-        if (response.status === 404) {
-          setWorkspaceExists(false)
-          return
-        }
-
-        if (!response.ok) {
-          throw new Error(
-            'Failed to check workspace'
-          )
-        }
-
-        const workspace = await response.json()
-        if (workspace.ownerId) {
-          const member = workspace.members.find((item: { id: string }) => item.id === workspace.currentMemberId)
-          setHasJoined(!!member)
-          if (member) localStorage.setItem(`memberIdentity:${workspaceId}`, JSON.stringify(member))
-        }
-        setWorkspaceExists(true)
-      } catch (error) {
-        console.error(
-          'Workspace check error:',
-          error
-        )
-
-        setWorkspaceExists(false)
+    const controller = new AbortController()
+    setWorkspaceExists(null); setHasJoined(false); setLoadError('')
+    if (!workspaceId) return
+    Promise.all([
+      apiRequest<{ ownerId?: string; currentMemberId?: string; members: { id: string }[] }>(`/workspaces/${encodeURIComponent(workspaceId)}`, { signal: controller.signal }),
+      apiRequest<Account>('/users/me', { signal: controller.signal }).catch(reason => {
+        if (reason instanceof ApiError && reason.status === 401) return null
+        throw reason
+      }),
+    ]).then(([workspace, user]) => {
+      if (controller.signal.aborted) return
+      setAccount(user); setRequiresAccount(!!workspace.ownerId)
+      let joined = !!workspace.members.find(member => member.id === workspace.currentMemberId)
+      if (!workspace.ownerId) {
+        try { const saved = JSON.parse(localStorage.getItem(`memberIdentity:${workspaceId}`) || 'null'); joined = workspace.members.some(member => member.id === saved?.id) } catch { /* No local membership. */ }
       }
-    }
-
-    checkWorkspace()
-  }, [workspaceId])
+      setHasJoined(joined); setWorkspaceExists(true)
+    }).catch(reason => {
+      if (controller.signal.aborted) return
+      if (reason instanceof ApiError && reason.status === 404) setWorkspaceExists(false)
+      else setLoadError('Unable to load this invitation. Check your connection and try again.')
+    })
+    return () => controller.abort()
+  }, [workspaceId, retry])
 
   return (
     <main className="landing-page">
@@ -76,7 +59,7 @@ function LandingPage() {
       <section className="landing-entry">
         <div className="landing-entry-card">
           {workspaceId ? (
-            workspaceExists === null ? (
+            loadError ? <div role="alert"><p>{loadError}</p><button className="workspace-enter-button" onClick={() => { setLoadError(''); setRetry(value => value + 1) }}>Retry invitation</button></div> : workspaceExists === null ? (
               <LoadingSkeleton variant="account" label="Loading workspace" />
             ) : workspaceExists === false ? (
               <div className="workspace-joined">
@@ -128,17 +111,17 @@ function LandingPage() {
                   <h2>Join Workspace</h2>
 
                   <p>
-                    Enter your details to join this workspace.
+                    {requiresAccount && !account ? 'Sign in to join your team and keep your work saved.' : account ? 'Join this workspace with your account.' : 'Enter your details to join this workspace.'}
                   </p>
                 </div>
 
-                <p className="settings-entry-link"><Link to={`/account?returnTo=${encodeURIComponent(`/workspace/${workspaceId}`)}`}>Sign in to your account</Link> before joining an account-backed workspace.</p>
-                <JoinWorkspaceForm
+                {requiresAccount && !account ? <p className="settings-entry-link"><Link to={`/account?returnTo=${encodeURIComponent(`/workspace/${workspaceId}`)}`}>Sign in to join workspace</Link></p> : <JoinWorkspaceForm
+                  account={account}
                   workspaceId={workspaceId}
                   onJoined={() =>
                     setHasJoined(true)
                   }
-                />
+                />}
               </>
             )
           ) : (

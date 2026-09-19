@@ -407,3 +407,50 @@ test('workspace chooser shows pending list and opening feedback and recovers fro
     await expect(page.getByRole('heading', { name: 'Today Dashboard', exact: true })).toBeVisible();
   } finally { releaseList(); releaseOpen(); await browser.close(); }
 });
+
+test('invite links preserve sign-in return, skip duplicate identity and codes accept casing and whitespace', async () => {
+  const browser = await chromium.launch();
+  const owner = await browser.newContext({ baseURL: base });
+  const context = await browser.newContext({ baseURL: base });
+  const page = await context.newPage();
+  try {
+    const signup = await owner.request.post('/api/auth/register', { headers: { Origin: base }, data: { name: 'Invite Owner', email: `invite-owner-${Date.now()}@example.test`, password: 'TemporaryPassword!123' } });
+    assert.equal(signup.status(), 201);
+    const workspace = await (await owner.request.post('/api/workspaces', { headers: { Origin: base }, data: { workspaceName: 'Invitation QA', creatorName: 'Owner' } })).json();
+    assert.equal((await context.request.post(`/api/workspaces/${workspace.id}/members`, { headers: { Origin: base }, data: { name: 'Guest' } })).status(), 401);
+    await page.goto(`/workspace/${workspace.id}`);
+    await expect(page.getByRole('textbox', { name: 'Name', exact: true })).toHaveCount(0);
+    await page.getByRole('link', { name: 'Sign in to join workspace', exact: true }).click();
+    const username = `invite-${Date.now()}`;
+    await page.getByLabel('Username', { exact: true }).fill(username);
+    await page.locator('form').getByRole('button', { name: 'Sign in', exact: true }).click();
+    await page.waitForURL(`**/workspace/${workspace.id}`);
+    await expect(page.getByText(`Joining as ${username}.`)).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Name', exact: true })).toHaveCount(0);
+    await page.evaluate(() => {
+      const original = Storage.prototype.setItem;
+      Storage.prototype.setItem = function(key, value) {
+        if (key.startsWith('memberIdentity:')) throw new DOMException('Storage blocked', 'SecurityError');
+        return original.call(this, key, value);
+      };
+    });
+    await page.getByRole('button', { name: 'Join Workspace', exact: true }).click();
+    await expect(page.getByRole('heading', { name: "You're in!" })).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole('heading', { name: "You're in!" })).toBeVisible();
+    await page.goto('/account');
+    await page.getByLabel('Invite code', { exact: true }).fill('NCT-NOT-VALID');
+    await page.getByRole('button', { name: 'Join workspace', exact: true }).click();
+    await expect(page.getByRole('alert').filter({ hasText: 'Invite code not found' })).toBeVisible();
+    await page.getByLabel('Invite code', { exact: true }).fill(`  ${workspace.inviteCode.toLowerCase()}  `);
+    await page.getByRole('button', { name: 'Join workspace', exact: true }).click();
+    await page.waitForURL('**/app/today');
+    const members = (await (await owner.request.get(`/api/workspaces/${workspace.id}`)).json()).members;
+    assert.equal(members.length, 2, 'Repeated joins do not duplicate memberships');
+    const repeated = await Promise.all([0, 1].map(() => context.request.post(`/api/workspaces/${workspace.id}/members`, { headers: { Origin: base }, data: {} })));
+    assert.ok(repeated.every(response => response.status() === 200));
+    assert.equal((await (await owner.request.get(`/api/workspaces/${workspace.id}`)).json()).members.length, 2);
+    assert.equal((await context.request.get(`/api/invites/${encodeURIComponent(` ${workspace.inviteCode.toLowerCase()} `)}`)).status(), 200);
+    await expect(page.getByRole('heading', { name: 'Today Dashboard', exact: true })).toBeVisible();
+  } finally { await browser.close(); }
+});

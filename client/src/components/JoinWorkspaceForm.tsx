@@ -4,24 +4,21 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
 import { joinWorkspaceSchema } from '../schemas/workspaceSchema'
-import { API_BASE_URL, apiFetch } from '../api'
+import { joinWorkspace } from '../joinWorkspace'
+import type { Account } from '../auth'
 
 type JoinWorkspaceFormData = z.infer<typeof joinWorkspaceSchema>
 
 type JoinWorkspaceFormProps = {
   workspaceId: string
   onJoined: () => void
-}
-
-type MemberResponse = {
-  id: string
-  name: string
-  email?: string
+  account?: Account | null
 }
 
 function JoinWorkspaceForm({
   workspaceId,
   onJoined,
+  account,
 }: JoinWorkspaceFormProps) {
   const [serverError, setServerError] =
     useState<string | null>(null)
@@ -35,6 +32,7 @@ function JoinWorkspaceForm({
     formState: { errors },
   } = useForm<JoinWorkspaceFormData>({
     resolver: zodResolver(joinWorkspaceSchema),
+    defaultValues: { name: account?.name || "", email: account?.email || "" },
   })
 
   const onSubmit = async (
@@ -44,46 +42,7 @@ function JoinWorkspaceForm({
       setIsSubmitting(true)
       setServerError(null)
 
-      const response = await apiFetch(
-        `${API_BASE_URL}/api/workspaces/${workspaceId}/members`,
-        {
-          method: 'POST',
-
-          headers: {
-            'Content-Type': 'application/json',
-          },
-
-          body: JSON.stringify({
-            name: data.name,
-            email: data.email || undefined,
-          }),
-        }
-      )
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(
-          result.error || 'Failed to join workspace'
-        )
-      }
-
-      const member = result as MemberResponse
-
-      const identity = {
-        workspaceId,
-        id: member.id,
-        name: member.name,
-        email: member.email ?? '',
-      }
-
-      localStorage.setItem(
-        `memberIdentity:${workspaceId}`,
-        JSON.stringify(identity)
-      )
-
-      console.log('Joined workspace:', identity)
-
+      await joinWorkspace(workspaceId, { name: account?.name || data.name, email: account?.email || data.email });
       onJoined()
     } catch (error) {
       if (error instanceof Error) {
@@ -103,7 +62,7 @@ function JoinWorkspaceForm({
       className="workspace-form"
       onSubmit={handleSubmit(onSubmit)}
     >
-      <label className="workspace-form-field">
+      {!account && <><label className="workspace-form-field">
         Name
 
         <input
@@ -139,6 +98,8 @@ function JoinWorkspaceForm({
         </p>
       )}
 
+      </>}
+      {account && <p>Joining as <strong>{account.name}</strong>.</p>}
       {serverError && (
         <p className="form-error">
           {serverError}
