@@ -30,9 +30,19 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  try { return await performRequest<T>(path, init) }
+  catch (error) {
+    const transient = error instanceof TypeError || (error instanceof ApiError && [500, 502, 503, 504].includes(error.status))
+    if ((init?.method?.toUpperCase() || 'GET') !== 'GET' || !transient || init?.signal?.aborted) throw error
+    await new Promise(resolve => setTimeout(resolve, 250))
+    init?.signal?.throwIfAborted()
+    return performRequest<T>(path, init)
+  }
+}
+
+async function performRequest<T>(path: string, init?: RequestInit): Promise<T> {
   if (path === '/auth/logout') {
-    const csrfResponse = await apiFetch('/api/username/csrf')
-    const { csrfToken } = await csrfResponse.json()
+    const { csrfToken } = await apiRequest<{ csrfToken: string }>('/username/csrf')
     const signout = await apiFetch('/api/username/signout', {
       method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ csrfToken, json: 'true' }),
@@ -43,6 +53,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init, headers: { 'Content-Type': 'application/json', ...init?.headers },
   })
   const body = await response.json().catch(() => null)
+  if (body === null) throw new ApiError(typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname) ? 'The API did not return JSON. Run npm run dev from the repository root; the Vite client needs the Next.js API on port 3000.' : 'The server returned an unexpected response. Please try again.', response.ok ? 502 : response.status)
   if (!response.ok) throw new ApiError(body?.error || 'Unable to complete this request. Please try again.', response.status)
   return body as T
 }

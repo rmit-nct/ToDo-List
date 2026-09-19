@@ -18,6 +18,8 @@ export class OptimisticTasks {
   private listeners = new Set<() => void>();
   private revision = 0;
   private creates = 0;
+  private loadError: string | null = null;
+  private hasLoaded = false;
   private visible = (_task: Task) => true;
   private snapshot: Snapshot = {
     tasks: [],
@@ -57,6 +59,7 @@ export class OptimisticTasks {
   async refresh(path: string, signal: AbortSignal, mine = false) {
     if (this.pending.length || this.creates) return;
     const revision = ++this.revision;
+    this.publish(this.snapshot.error === this.loadError ? null : this.snapshot.error, !this.hasLoaded || (!!this.loadError && this.confirmed.length === 0));
     try {
       const [tasks, account] = await Promise.all([
         this.request<Task[]>(path, { signal }),
@@ -69,14 +72,15 @@ export class OptimisticTasks {
       this.visible = account
         ? (task) => (task.assignedMemberId || task.assignee?.id) === account.id
         : () => true;
-      this.publish(this.snapshot.error, false);
+      const error = this.snapshot.error === this.loadError ? null : this.snapshot.error;
+      this.loadError = null;
+      this.hasLoaded = true;
+      this.publish(error, false);
     } catch (reason) {
       if (!signal.aborted && revision === this.revision) {
         if (reason && typeof reason === 'object' && 'status' in reason && (reason.status === 401 || reason.status === 403)) this.confirmed = [];
-        this.publish(
-          reason instanceof Error ? reason.message : "Unable to load tasks.",
-          false,
-        );
+        this.loadError = reason instanceof Error ? reason.message : "Unable to load tasks.";
+        this.publish(this.loadError, false);
       }
     }
   }

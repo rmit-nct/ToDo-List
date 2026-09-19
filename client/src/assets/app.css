@@ -585,7 +585,7 @@ nav a.active {
   background: var(--yellow);
 }
 
-.page-heading span {
+.page-heading > div:first-child > span {
   display: block;
   color: var(--muted);
   font-size: 12px;

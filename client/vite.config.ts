@@ -1,12 +1,12 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// https://vite.dev/config/
+// Username authentication is served by the root Next.js app, not the standalone Express server.
 export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': process.env.VITE_API_TARGET || 'http://localhost:5001',
+      '/api': process.env.VITE_API_TARGET || 'http://localhost:3000',
     },
   },
 })

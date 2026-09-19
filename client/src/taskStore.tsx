@@ -1,6 +1,7 @@
 import {
   useEffect,
   useMemo,
+  useState,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
@@ -38,6 +39,7 @@ export function TaskStoreProvider({
 function TaskStoreScope({ children, workspaceId, mine }: { children: ReactNode; workspaceId?: string; mine: boolean }) {
   // Keying this scope prevents the previous workspace’s cache from leaking.
   const store = useMemo(() => cachedStore(`${workspaceId || "all"}:${mine}`), [workspaceId, mine]);
+  const [refreshVersion, setRefreshVersion] = useState(0);
   const state = useSyncExternalStore(
     store.subscribe,
     store.getSnapshot,
@@ -66,11 +68,12 @@ function TaskStoreScope({ children, workspaceId, mine }: { children: ReactNode; 
       clearInterval(timer);
       window.removeEventListener("focus", onFocus);
     };
-  }, [store, workspaceId, mine]);
+  }, [store, workspaceId, mine, refreshVersion]);
   const value = useMemo<TaskStoreValue>(
     () => ({
       ...state,
       clearError: store.clearError,
+      refreshTasks: () => setRefreshVersion(value => value + 1),
       saveTask: (task) =>
         store.save({ ...task, workspaceId: task.workspaceId ?? workspaceId }),
       deleteTask: store.remove,
