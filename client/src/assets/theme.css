@@ -38,3 +38,6 @@ html[data-theme-changing] *::after {
 .account-settings-link strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sidebar-footer .account-settings-link small { display: block; color: #bac2cf; margin-top: 3px; }
 .sidebar-footer .account-settings-link.active { border-color: #8ce7ff66; }
+
+/* Keep field hints readable in both themes without replacing visible labels. */
+input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }

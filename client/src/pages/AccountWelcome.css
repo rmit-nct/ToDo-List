@@ -36,3 +36,11 @@
   .account-welcome > .account-header { padding: 14px 24px 0; }
   .account-welcome > .account-content { margin: 0 auto; padding: 0 24px 36px; }
 }
+/* One selector for username entry, email sign-in, and email registration. */
+.account-welcome .account-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; margin: 20px 0; }
+.account-welcome .account-tabs button { min-width: 0; min-height: 42px; padding: 8px 4px; font: inherit; font-size: 13px; font-weight: 500; color: var(--muted); border-radius: 8px; }
+.account-welcome .account-tabs button[aria-pressed='true'] { background: var(--navy); color: #fff; box-shadow: 0 1px 4px rgb(0 0 0 / 12%); }
+[data-theme='dark'] .account-welcome .account-tabs button[aria-pressed='true'] { background: #364364; color: #fff; }
+.account-welcome .account-tabs button:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.account-welcome .account-intro { min-height: 42px; }
+.account-welcome .settings-field > span > small { display: inline; font-weight: 400; color: var(--muted); }

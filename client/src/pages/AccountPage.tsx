@@ -1,12 +1,12 @@
 import { LoadingSkeleton } from "../components/LoadingSkeleton";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   Link,
   useLocation,
   useNavigate,
   useSearchParams,
 } from "react-router-dom";
-import { ArrowRight, Moon, Sun } from "lucide-react";
+import { ArrowRight, LoaderCircle, Moon, Sun } from "lucide-react";
 import { ApiError, apiRequest, readCache } from "../api";
 import { BrandLogo } from "../components/BrandLogo";
 import CreateWorkspaceForm from "../components/CreateWorkspaceForm";
@@ -26,37 +26,46 @@ export function AccountPage() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const [method, setMethod] = useState<"username" | "email">(
+  const [access, setAccess] = useState<"username" | "email" | "signup">(
     location.pathname === "/account/email" ? "email" : "username",
   );
   const { dark, toggleTheme } = useTheme();
   const [account, setAccount] = useState<Account | null>(() => readCache.peek<Account>("/users/me") || null);
   const [workspaces, setWorkspaces] = useState<WorkspaceSummary[]>(() => readCache.peek<WorkspaceSummary[]>("/users/me/workspaces") || []);
-  const [loading, setLoading] = useState(!readCache.peek("/users/me") || !readCache.peek("/users/me/workspaces"));
-  const [register, setRegister] = useState(false);
+  const [loading, setLoading] = useState(!readCache.peek("/users/me"));
+  const method = access === "username" ? "username" : "email";
+  const register = access === "signup";
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [invite, setInvite] = useState("");
+  const [workspacesLoading, setWorkspacesLoading] = useState(!readCache.peek("/users/me/workspaces"));
+  const [workspaceError, setWorkspaceError] = useState("");
+  const [openingWorkspace, setOpeningWorkspace] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
+  const loadGeneration = useRef(0);
   useEffect(() => {
     let active = true;
-    Promise.all([apiRequest<Account>("/users/me"), apiRequest<WorkspaceSummary[]>("/users/me/workspaces")])
-      .then(([user, list]) => {
-        if (active) { setAccount(user); setWorkspaces(list); }
+    const generation = ++loadGeneration.current;
+    const isCurrent = () => active && generation === loadGeneration.current;
+    apiRequest<Account>("/users/me")
+      .then(user => { if (isCurrent()) setAccount(user); })
+      .catch(reason => {
+        if (isCurrent()) { setAccount(null); setWorkspaces([]); if (!(reason instanceof ApiError && reason.status === 401)) setError(reason.message); }
       })
-      .catch((reason) => {
-        if (active) { setAccount(null); setWorkspaces([]); if (!(reason instanceof ApiError && reason.status === 401)) setError(reason.message); }
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+      .finally(() => { if (isCurrent()) setLoading(false); });
+    apiRequest<WorkspaceSummary[]>("/users/me/workspaces")
+      .then(list => { if (isCurrent()) { setWorkspaces(list); setWorkspaceError(""); } })
+      .catch(reason => { if (isCurrent() && !(reason instanceof ApiError && reason.status === 401)) setWorkspaceError(reason.message); })
+      .finally(() => { if (isCurrent()) setWorkspacesLoading(false); });
     return () => {
       active = false;
     };
-  }, []);
+  }, [retry]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const fields = Object.fromEntries(new FormData(event.currentTarget));
+    loadGeneration.current++;
     setBusy(true);
     setError("");
     try {
@@ -72,14 +81,17 @@ export function AccountPage() {
         navigate(returnTo);
         return;
       }
+      setWorkspacesLoading(true);
+      setWorkspaceError("");
       setAccount(user);
       setWorkspaces(
-        await apiRequest<WorkspaceSummary[]>("/users/me/workspaces"),
+        await apiRequest<WorkspaceSummary[]>("/users/me/workspaces").catch(reason => { setWorkspaceError(reason.message); return []; }),
       );
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Unable to sign in.");
     } finally {
       setBusy(false);
+      setWorkspacesLoading(false);
     }
   }
   async function join(event: FormEvent<HTMLFormElement>) {
@@ -105,14 +117,21 @@ export function AccountPage() {
       setBusy(false);
     }
   }
-  function openWorkspace(workspace: WorkspaceSummary) {
-    const member = workspace.members.find((item) => item.id === account?.id);
-    if (member)
-      localStorage.setItem(
-        `memberIdentity:${workspace.id}`,
-        JSON.stringify(member),
-      );
-    navigate(`/workspace/${workspace.id}/app/today`);
+  async function openWorkspace(workspace: WorkspaceSummary) {
+    if (openingWorkspace) return;
+    setOpeningWorkspace(workspace.id);
+    setWorkspaceError("");
+    try {
+      await apiRequest(`/workspaces/${encodeURIComponent(workspace.id)}`);
+      const member = workspace.members.find(item => item.id === account?.id);
+      if (member) {
+        try { localStorage.setItem(`memberIdentity:${workspace.id}`, JSON.stringify(member)); } catch { /* The server session is authoritative. */ }
+      }
+      navigate(`/workspace/${workspace.id}/app/today`);
+    } catch (reason) {
+      setWorkspaceError(reason instanceof Error ? reason.message : "Unable to open workspace. Please try again.");
+      setOpeningWorkspace(null);
+    }
   }
   return (
     <main className={`account-page${!account ? " account-welcome" : ""}`}>
@@ -141,7 +160,7 @@ export function AccountPage() {
               </div>
               <button
                 className="secondary"
-                disabled={busy}
+                disabled={busy || !!openingWorkspace}
                 onClick={async () => {
                   setBusy(true);
                   try {
@@ -161,20 +180,23 @@ export function AccountPage() {
                 Sign out
               </button>
             </div>
-            {workspaces.length > 0 && (
+            {workspacesLoading ? <LoadingSkeleton variant="list" label="Loading your workspaces" /> : workspaces.length > 0 && (
               <section className="account-workspaces">
                 {workspaces.map((workspace) => (
                   <button
                     key={workspace.id}
+                    disabled={!!openingWorkspace}
+                    aria-busy={openingWorkspace === workspace.id}
                     onClick={() => openWorkspace(workspace)}
                   >
-                    <span className="workspace-dot">{workspace.name[0]}</span>
+                    <span className="workspace-dot" aria-hidden="true">{workspace.name[0]}</span>
                     <strong>{workspace.name}</strong>
-                    <ArrowRight size={18} />
+                    {openingWorkspace === workspace.id ? <span className="workspace-opening" role="status"><LoaderCircle size={16} aria-hidden="true" />Opening…</span> : <ArrowRight size={18} />}
                   </button>
                 ))}
               </section>
             )}
+            {workspaceError && <div className="settings-error" role="alert">{workspaceError}<button type="button" className="secondary" onClick={() => { readCache.clear(); setWorkspacesLoading(true); setWorkspaceError(""); setRetry(value => value + 1); }}>Retry</button></div>}
             <div className="account-grid">
               <section className="settings-panel">
                 <h2>Create a workspace</h2>
@@ -194,7 +216,7 @@ export function AccountPage() {
                     />
                   </label>
                   <button className="primary" disabled={busy}>
-                    Join workspace
+                    {busy ? "Joining…" : "Join workspace"}
                   </button>
                 </form>
               </section>
@@ -208,59 +230,30 @@ export function AccountPage() {
                 ? "Create your account"
                 : "Welcome back"}
             </h2>
-            <p>Sign in to manage your profile and workspace preferences.</p>
-            <div className="account-tabs" aria-label="Sign-in method">
-              <button
+            <p className="account-intro">
+              {register ? "Create an email account to save your work and collaborate." : method === "email" ? "Sign in with your email and password to continue." : "Use your username to return to your team’s workspaces."}
+            </p>
+            <div className="account-tabs" role="group" aria-label="Account access">
+              {([
+                { value: "username", label: "Username" },
+                { value: "email", label: "Email" },
+                { value: "signup", label: "Sign up" },
+              ] as const).map(option => <button
+                key={option.value}
+                type="button"
                 disabled={busy}
-                aria-pressed={method === "username"}
-                onClick={() => {
-                  setMethod("username");
-                  setError("");
-                }}
-              >
-                Username
-              </button>
-              <button
-                disabled={busy}
-                aria-pressed={method === "email"}
-                onClick={() => {
-                  setMethod("email");
-                  setError("");
-                }}
-              >
-                Email
-              </button>
+                aria-pressed={access === option.value}
+                aria-controls="account-access-form"
+                onClick={() => { setAccess(option.value); setError(""); }}
+              >{option.label}</button>)}
             </div>
-            {method === "email" && (
-              <div className="account-tabs">
-                <button
-                  disabled={busy}
-                  aria-pressed={!register}
-                  onClick={() => {
-                    setRegister(false);
-                    setError("");
-                  }}
-                >
-                  Sign in
-                </button>
-                <button
-                  disabled={busy}
-                  aria-pressed={register}
-                  onClick={() => {
-                    setRegister(true);
-                    setError("");
-                  }}
-                >
-                  Sign up
-                </button>
-              </div>
-            )}
-            <form key={`${method}-${register}`} onSubmit={submit}>
+            <form id="account-access-form" key={access} onSubmit={submit}>
               {method === "username" ? (
                 <label className="settings-field">
                   Username
                   <input
                     name="username"
+                    placeholder="e.g. alex.chen"
                     required
                     minLength={3}
                     maxLength={32}
@@ -277,6 +270,7 @@ export function AccountPage() {
                       Display name
                       <input
                         name="name"
+                        placeholder="Your name"
                         required
                         maxLength={80}
                         autoComplete="name"
@@ -287,6 +281,7 @@ export function AccountPage() {
                     Email
                     <input
                       name="email"
+                      placeholder="you@example.com"
                       type="email"
                       required
                       maxLength={254}
@@ -297,6 +292,7 @@ export function AccountPage() {
                     Password
                     <input
                       name="password"
+                      placeholder={register ? "Create a password (12+ characters)" : "Enter your password"}
                       type="password"
                       required
                       minLength={register ? 12 : undefined}
@@ -310,9 +306,10 @@ export function AccountPage() {
                     <p className="settings-note">Use at least 12 characters.</p>
                   ) : (
                     <label className="settings-field">
-                      Authenticator code <small>(if enabled)</small>
+                      <span>Authenticator code <small>(if enabled)</small></span>
                       <input
                         name="code"
+                        placeholder="6-digit code"
                         inputMode="numeric"
                         pattern="[0-9]{6}"
                         maxLength={6}

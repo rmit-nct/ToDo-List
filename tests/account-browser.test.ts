@@ -277,8 +277,16 @@ test('shared sign-in preserves the original welcome design without narrow-screen
     await expect(page.getByRole('heading', { name: 'Stay organized' })).toBeVisible();
     await expect(page.getByLabel('Username', { exact: true })).toBeVisible();
     await page.screenshot({ path: '/tmp/nct-welcome-desktop.png', animations: 'disabled' });
-    await page.getByRole('button', { name: 'Email', exact: true }).click();
-    await page.getByRole('button', { name: 'Sign up', exact: true }).click();
+    const access = page.getByRole('group', { name: 'Account access', exact: true });
+    await expect(access).toHaveCount(1);
+    await expect(access.getByRole('button')).toHaveCount(3);
+    await access.getByRole('button', { name: 'Email', exact: true }).click();
+    await expect(access.getByRole('button', { name: 'Email', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByLabel('Email', { exact: true })).toHaveAttribute('placeholder', 'you@example.com');
+    await expect(page.getByLabel('Password', { exact: true })).toHaveAttribute('placeholder', 'Enter your password');
+    await page.screenshot({ path: '/tmp/nct-email-form-desktop.png', animations: 'disabled' });
+    await access.getByRole('button', { name: 'Sign up', exact: true }).click();
+    await expect(access.locator('[aria-pressed="true"]')).toHaveCount(1);
     await expect(page.getByLabel('Display name')).toBeVisible();
     for (const width of [800, 390, 320]) {
       await page.setViewportSize({ width, height: 900 });
@@ -365,4 +373,37 @@ test('workspace reads are shared and returning task views stay usable during ref
     await expect(page.getByRole('status', { name: 'Loading tasks', exact: true })).toHaveCount(0);
     assert.equal(reads, 1, 'Navigation reuses workspace data');
   } finally { release(); await browser.close(); }
+});
+
+test('workspace chooser shows pending list and opening feedback and recovers from failure', async () => {
+  const browser = await chromium.launch();
+  const context = await browser.newContext({ baseURL: base });
+  const page = await context.newPage();
+  let releaseList = () => {};
+  let releaseOpen = () => {};
+  try {
+    const signup = await context.request.post('/api/auth/register', { headers: { Origin: base }, data: { name: 'Chooser QA', email: `chooser-${Date.now()}@example.test`, password: 'TemporaryPassword!123' } });
+    assert.equal(signup.status(), 201);
+    const workspace = await (await context.request.post('/api/workspaces', { headers: { Origin: base }, data: { workspaceName: 'Chooser workspace', creatorName: 'Owner' } })).json();
+    const listGate = new Promise<void>(resolve => { releaseList = resolve; });
+    await page.route('**/api/users/me/workspaces', async route => { await listGate; await route.continue(); });
+    await page.goto('/account');
+    await expect(page.getByRole('heading', { name: 'Welcome, Chooser.' })).toBeVisible();
+    await expect(page.getByRole('status', { name: 'Loading your workspaces', exact: true })).toBeVisible();
+    releaseList();
+    const card = page.getByRole('button', { name: 'Chooser workspace', exact: true });
+    await expect(card).toBeVisible();
+    const openGate = new Promise<void>(resolve => { releaseOpen = resolve; });
+    await page.route(`**/api/workspaces/${workspace.id}`, async route => { await openGate; await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'Temporarily unavailable' }) }); });
+    await card.click();
+    await expect(page.getByRole('status').filter({ hasText: 'Opening…' })).toBeVisible();
+    await expect(page.locator('.account-workspaces button')).toBeDisabled();
+    releaseOpen();
+    await expect(page.getByRole('alert').filter({ hasText: 'Temporarily unavailable' })).toBeVisible();
+    await expect(card).toBeEnabled();
+    await page.unroute(`**/api/workspaces/${workspace.id}`);
+    await card.click();
+    await page.waitForURL('**/app/today');
+    await expect(page.getByRole('heading', { name: 'Today Dashboard', exact: true })).toBeVisible();
+  } finally { releaseList(); releaseOpen(); await browser.close(); }
 });

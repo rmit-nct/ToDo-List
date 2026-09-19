@@ -238,6 +238,7 @@ export function WorkspaceManagePage() {
 
             <input
               type="text"
+              placeholder="e.g. Design team"
               value={workspaceName}
               aria-invalid={
                 nameError

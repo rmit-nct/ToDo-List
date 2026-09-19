@@ -269,11 +269,11 @@ export default function HomePage() {
           <h2>Add a workspace member</h2>
           <label>
             Name
-            <input name="name" required maxLength={80} />
+            <input name="name" placeholder="Teammate’s name" required maxLength={80} />
           </label>
           <label>
             Email (optional)
-            <input name="email" type="email" />
+            <input name="email" placeholder="teammate@example.com" type="email" />
           </label>
           <button className="secondary" disabled={memberBusy}>
             Add member

@@ -98,3 +98,13 @@
 @media (max-width: 380px) {
   .settings-theme label { flex-direction: column; gap: 4px; padding: 8px 4px; }
 }
+.account-title { align-items: flex-start; }
+.account-title > button { flex-shrink: 0; min-height: 40px; }
+.account-workspaces button { min-width: 0; text-align: left; }
+.account-workspaces strong { overflow-wrap: anywhere; min-width: 0; }
+.account-workspaces button[aria-busy='true'] { border-color: var(--teal); opacity: 1; }
+.workspace-opening { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; color: var(--muted); font-size: 12px; }
+.workspace-opening svg { animation: workspace-opening-spin 1s linear infinite; }
+@keyframes workspace-opening-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .workspace-opening svg { animation: none; } }
+.account-content > .settings-error, .account-content .settings-error[role='alert'] { overflow-wrap: anywhere; }

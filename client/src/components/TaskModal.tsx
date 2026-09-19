@@ -189,6 +189,7 @@ export function TaskModal({
             Title
             <input
               autoFocus
+              placeholder="e.g. Prepare the project presentation"
               maxLength={200}
               {...register("title", {
                 required: "A title is required",
@@ -201,7 +202,7 @@ export function TaskModal({
           </label>
           <label className="full">
             Description
-            <textarea rows={3} maxLength={5000} {...register("description")} />
+            <textarea placeholder="Add details, links, or a checklist…" rows={3} maxLength={5000} {...register("description")} />
           </label>
           <label>
             Status
@@ -254,7 +255,7 @@ export function TaskModal({
           </label>
           <label>
             Due date
-            <input type="date" {...register("dueDate", { required: true })} />
+            <input type="date" placeholder="YYYY-MM-DD" {...register("dueDate", { required: true })} />
           </label>
           {memberError || requestError ? (
             <p className="request-error" role="alert">
