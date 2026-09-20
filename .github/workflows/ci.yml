@@ -17,7 +17,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run build:cloudflare
-      - run: npm ci --prefix client
+      - run: npm ci --prefix frontend
       - run: npx playwright install --with-deps chromium
       - name: Isolated MongoDB integration tests
         run: |
@@ -30,7 +30,7 @@ jobs:
             sleep 2
           done
           npm test
-          VITE_API_TARGET=http://localhost:3100 npm run dev:vite --prefix client -- --host 127.0.0.1 --port 5173 > /tmp/nct-vite.log 2>&1 &
+          VITE_API_TARGET=http://localhost:3100 npm run dev:vite --prefix frontend -- --host 127.0.0.1 --port 5173 > /tmp/nct-vite.log 2>&1 &
           VITE_PID=$!
           for attempt in $(seq 1 30); do
             if curl -fsS http://localhost:5173 > /dev/null; then break; fi

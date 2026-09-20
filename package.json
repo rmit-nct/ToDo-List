@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "lint": "oxlint app backend client/src",
+    "lint": "oxlint app backend frontend/src",
     "test": "tsx --test tests/*.test.ts",
     "build:cloudflare": "opennextjs-cloudflare build",
     "preview:cloudflare": "opennextjs-cloudflare preview",

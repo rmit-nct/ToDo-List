@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { OptimisticTasks } from "../client/src/optimisticTasks";
-import type { Task } from "../client/src/types";
+import { OptimisticTasks } from "../frontend/src/optimisticTasks";
+import type { Task } from "../frontend/src/types";
 const task: Task = {
   id: "one",
   title: "Original",
