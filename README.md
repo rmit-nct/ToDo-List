@@ -61,6 +61,7 @@ ToDo-List/
 ├── package.json          # Dependencies and project scripts
 ├── tsconfig.json         # TypeScript configuration
 └── README.md
+```
 
 ## Getting Started
 
