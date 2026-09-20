@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-Configure local environment variables from the root `.env.example`. Never commit environment files or database data. MongoDB stays in Atlas for production; tests use a disposable MongoDB instance.
+Configure local environment variables from the root `.env.example`. Follow [the teammate Atlas setup guide](docs/atlas-setup.md) to connect to `neo_todo` using your own ignored `.env.local`. Never commit environment files or database data. MongoDB stays in Atlas for production; tests use a disposable MongoDB instance.
 
 `npm run dev` inside `client/` also starts the root Next.js app. Install root dependencies first. Username sign-in needs the Next.js `/api/username/*` routes; the standalone Express server does not provide them.
 
