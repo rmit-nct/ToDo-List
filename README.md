@@ -49,19 +49,18 @@ NEO To-Do List provides a shared workspace where team members can organize tasks
 
 ```text
 ToDo-List/
-├── app/                 # Next.js API and authentication
-├── client/              # React + Vite frontend
-│   ├── public/
-│   └── src/
-├── docs/                # Project documentation
-├── scripts/             # Utility scripts
-├── tests/               # Project tests
-├── public/              # Server public assets
-├── .env.example         # Environment variable template
-├── next.config.ts
-├── package.json
+├── app/                  # Next.js application and API routes
+├── backend/              # Backend services
+├── client/               # React client application
+├── docs/                 # Documentation and demo materials
+├── public/               # Static assets
+├── scripts/              # Project scripts
+├── tests/                # Automated tests
+├── .env.example          # Environment variable template
+├── next.config.ts        # Next.js configuration
+├── package.json          # Dependencies and project scripts
+├── tsconfig.json         # TypeScript configuration
 └── README.md
-```
 
 ## Getting Started
 
