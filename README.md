@@ -1,40 +1,133 @@
-# NEO To-do List
+# NEO To-Do List
 
-Collaborative task management for student teams and club committees. Shared workspaces, task assignment, progress charts, Today Dashboard, and a drag-and-drop sprint board use persisted MongoDB data.
+A collaborative task management web application designed for student teams and club committees.
 
-## Development
+NEO To-Do List provides a shared workspace where team members can organize tasks, track progress, manage members, and collaborate through a simple and centralized interface.
 
-The root Next.js app serves the React UI in `frontend/src` and the Express API in `backend/` through `app/api/`. Run commands from the repository root:
+## Demo
 
-```sh
-npm ci
+🎥 **Video Demo:** [Watch the NEO To-Do List Demo](docs/demo/NEO-TO-DO-LIST.mp4)
+
+## Features
+
+- Create and join team workspaces
+- Username and email account access
+- Create, edit, and manage tasks
+- Assign tasks to workspace members
+- Track task status and priority
+- Today Dashboard for current tasks
+- Weekly Sprint Board for planning and progress tracking
+- Workspace member management
+- Workspace rename and management
+- Shareable workspace invitation links
+- Form validation and error handling
+- Light and dark mode
+- Responsive user interface
+
+## Tech Stack
+
+### Frontend
+
+- React
+- TypeScript
+- Vite
+- React Router
+- React Hook Form
+- Zod
+- Lucide React
+
+### Backend
+
+- Next.js
+- Node.js
+- MongoDB
+- Mongoose
+- NextAuth
+
+## Project Structure
+
+```text
+ToDo-List/
+├── app/                 # Next.js API and authentication
+├── client/              # React + Vite frontend
+│   ├── public/
+│   └── src/
+├── docs/                # Project documentation
+├── scripts/             # Utility scripts
+├── tests/               # Project tests
+├── public/              # Server public assets
+├── .env.example         # Environment variable template
+├── next.config.ts
+├── package.json
+└── README.md
+```
+
+## Getting Started
+
+### Prerequisites
+
+Make sure you have installed:
+
+- Node.js 22 or later
+- npm
+- Access to the project's MongoDB database
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/rmit-nct/ToDo-List.git
+cd ToDo-List
+```
+
+### 2. Install backend dependencies
+
+```bash
+npm install
+```
+
+### 3. Install frontend dependencies
+
+```bash
+cd client
+npm install
+cd ..
+```
+
+### 4. Configure environment variables
+
+Create a `.env` file in the project root based on `.env.example`.
+
+```bash
+cp .env.example .env
+```
+
+Configure the required MongoDB and authentication environment variables.
+
+> Do not commit the `.env` file or database credentials to GitHub.
+
+### 5. Start the application
+
+Start the backend from the project root:
+
+```bash
 npm run dev
 ```
 
-Configure local environment variables from the root `.env.example`. Follow [the teammate Atlas setup guide](docs/atlas-setup.md) to connect to `neo_todo` using your own ignored `.env.local`. Never commit environment files or database data. MongoDB stays in Atlas for production; tests use a disposable MongoDB instance.
+Then start the frontend in another terminal:
 
-`npm run dev` inside `frontend/` also starts the root Next.js app. Install root dependencies first. Username sign-in needs the Next.js `/api/username/*` routes; the standalone Express server does not provide them.
-
-For optional Vite-only frontend development, keep the root Next.js server running on port 3000, then run `npm ci && npm run dev:vite` inside `frontend/`. Its `/api` proxy targets Next.js on port 3000 (override with `VITE_API_TARGET` if needed). Include the Vite origin in `APP_ORIGINS`, as shown in `.env.example`.
-
-## Validation
-
-```sh
-npm run typecheck
-npm run lint
-npm run build:cloudflare
-npx playwright install chromium
-node scripts/test-server.mjs
-# In another terminal:
-npm test
+```bash
+cd client
+npm run dev
 ```
 
-## Delivery
+Open the frontend URL shown by Vite in your browser.
 
-Production runs on Cloudflare Worker `nct-planner` at https://nct-todo.ttr.gg using OpenNext/Wrangler in the Skora Personal account. The release source is `main`. Verify the exact commit's CI, deploy the corresponding build, and check live behavior with temporary test data.
+## Main User Flow
 
-## Interaction and caching
-
-Username and email entry share one account/workspace flow. Task edits and moves apply immediately and reconcile with the server; failures restore saved state. Workspace/profile reads are deduplicated and cached in session memory for 15 seconds. Writes invalidate reads, account changes clear caches, and cached task views refresh on navigation, focus, and every 30 seconds while visible. No private API payloads are persisted to browser storage.
-
-The welcome design and My Progress / Workspace Progress charts preserve the team's original contributions. Progress charts use native CSS with accessible text counts.
+1. Sign up or sign in.
+2. Create a new workspace or join an existing workspace.
+3. Invite other team members using the workspace invite link.
+4. Create and assign tasks.
+5. Manage task status, priority, and due dates.
+6. Track work through the Today Dashboard and Weekly Sprint Board.
+7. Manage workspace information and members.
