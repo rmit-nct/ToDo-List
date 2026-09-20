@@ -1,5 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import type { MongoClient, Db } from "mongodb";
+import { ensureInviteCodeIndex } from "./indexes";
 
 type DatabaseScope = { client?: MongoClient; pending?: Promise<Db> };
 const scope = new AsyncLocalStorage<DatabaseScope>();
@@ -53,9 +54,7 @@ async function connect(state: DatabaseScope): Promise<Db> {
         .collection("workspaces")
         .createIndex({ id: 1 }, { unique: true }),
       database.collection("workspaces").createIndex({ memberIds: 1 }),
-      database
-        .collection("workspaces")
-        .createIndex({ inviteCode: 1 }, { unique: true }),
+      ensureInviteCodeIndex(database),
       database.collection("tasks").createIndex({ id: 1 }, { unique: true }),
       database.collection("tasks").createIndex({ workspaceId: 1, dueDate: 1 }),
       database.collection("limits").createIndex({ key: 1 }, { unique: true }),
