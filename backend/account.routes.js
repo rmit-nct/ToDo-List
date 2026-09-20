@@ -213,7 +213,7 @@ router.delete('/users/me', requireUser, sensitive, async (req, res) => {
   await Task.updateMany({ 'creator.id': id }, { $set: { creator: { id: 'deleted-user', name: 'Deleted member', initials: '?', color: '#68778e' } } });
   await Session.deleteMany({ userId: id });
   if (req.account.authMode === 'username') {
-    const connection = require('./runtime-mongoose').scope.getStore();
+    const connection = require('./database').scope.getStore();
     // Remove the username credential too, so deleted profiles cannot sign in again.
     // The archived workspace records stay intact; restoration markers prevent resurrection.
     if (connection) await connection.db.collection('users').deleteOne({ id, authMode: 'username' });

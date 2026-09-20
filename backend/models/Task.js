@@ -1,4 +1,4 @@
-const mongoose = require("../runtime-mongoose");
+const mongoose = require("../database");
 
 const memberSchema = new mongoose.Schema(
   {

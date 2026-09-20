@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import type { MongoClient, Db } from "mongodb";
-import { ensureInviteCodeIndex } from "./indexes";
+import { ensureInviteCodeIndex } from "./database-indexes";
 
 type DatabaseScope = { client?: MongoClient; pending?: Promise<Db> };
 const scope = new AsyncLocalStorage<DatabaseScope>();

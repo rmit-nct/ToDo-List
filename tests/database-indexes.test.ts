@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { MongoClient } from "mongodb";
 import { MongoMemoryServer } from "mongodb-memory-server";
-import { ensureInviteCodeIndex } from "../app/auth-lib/indexes";
+import { ensureInviteCodeIndex } from "../app/services/database-indexes";
 
 test("invite code initialization supports legacy and current databases", async () => {
   const server = await MongoMemoryServer.create();
