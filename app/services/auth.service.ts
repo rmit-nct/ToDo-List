@@ -1,7 +1,7 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { randomUUID } from "node:crypto";
-import { db } from "./db";
+import { db } from "./database";
 import { usernameSchema, rateLimit } from "./security";
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,

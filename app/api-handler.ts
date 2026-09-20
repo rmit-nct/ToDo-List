@@ -1,10 +1,10 @@
 import { getToken } from "next-auth/jwt";
-import { restoreUsernameProfile } from "./auth-lib/username-profile";
+import { restoreUsernameProfile } from "./services/profile.service";
 import { createHash } from "node:crypto";
 import mongoose from "mongoose";
 import serverless from "serverless-http";
 import { createServer } from "node:http";
-import { scope, schemas, collectionName } from "../backend/runtime-mongoose";
+import { scope, schemas, collectionName } from "../backend/database";
 
 let indexesReady = false;
 

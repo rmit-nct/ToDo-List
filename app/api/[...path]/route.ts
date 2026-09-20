@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 async function route(request: Request) {
   try {
     // MongoDB and Mongoose initialize inside the Worker request context.
-    const { handleRequest } = await import("../../backend-handler");
+    const { handleRequest } = await import("../../api-handler");
     return await handleRequest(request);
   } catch (error) {
     console.error("API request failed", {

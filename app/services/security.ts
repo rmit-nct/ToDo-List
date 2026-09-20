@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { db } from "./db";
+import { db } from "./database";
 export class HttpError extends Error {
   constructor(
     public status: number,

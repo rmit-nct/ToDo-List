@@ -1,6 +1,6 @@
-import { withDatabase } from "../../../auth-lib/db";
+import { withDatabase } from "../../../services/database";
 import NextAuth from "next-auth";
-import { authOptions } from "../../../auth-lib/auth";
+import { authOptions } from "../../../services/auth.service";
 const handler = NextAuth(authOptions);
 async function route(
   request: Request,

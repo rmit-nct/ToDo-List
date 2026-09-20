@@ -1,4 +1,4 @@
-const mongoose = require('../runtime-mongoose');
+const mongoose = require('../database');
 const schema = new mongoose.Schema({
   tokenHash: { type: String, required: true, unique: true },
   userId: { type: String, required: true, index: true },

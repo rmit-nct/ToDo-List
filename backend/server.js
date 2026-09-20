@@ -11,7 +11,7 @@ const Task = require("./models/Task");
 // Pull in our mock data (destructuring, same idea as on the frontend)
 const { mockMembers, } = require("./mockData");
 
-const { router: accountRouter, optionalUser, encryptionKey, issueSession, publicUser } = require('./account');
+const { router: accountRouter, optionalUser, encryptionKey, issueSession, publicUser } = require('./account.routes');
 const app = express();
 const allowedOrigins = (process.env.APP_ORIGINS || 'http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:5174').split(',').map(value => value.trim());
 
