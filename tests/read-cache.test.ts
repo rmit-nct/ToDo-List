@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ReadCache } from '../client/src/readCache';
+import { ReadCache } from '../frontend/src/readCache';
 
 test('shared reads deduplicate and cache, while invalidation fences late responses', async () => {
   const cache = new ReadCache();

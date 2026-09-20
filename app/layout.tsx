@@ -4,8 +4,8 @@ import "@fontsource/poppins/600.css";
 import "@fontsource/poppins/700.css";
 import "@fontsource/poppins/800.css";
 import type { Metadata } from "next";
-import "../client/src/assets/app.css";
-import "../client/src/assets/task-runtime.css";
+import "../frontend/src/assets/app.css";
+import "../frontend/src/assets/task-runtime.css";
 export const metadata: Metadata = {
   title: "NEO — Task workspace",
   description:

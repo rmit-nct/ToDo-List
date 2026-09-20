@@ -25,15 +25,15 @@
     "app/**/*.ts",
     "app/**/*.tsx",
     "backend/**/*.ts",
-    "client/src/**/*.ts",
-    "client/src/**/*.tsx",
+    "frontend/src/**/*.ts",
+    "frontend/src/**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
-    "client/src/main.tsx",
-    "client/src/mockData.ts",
-    "client/src/data.ts"
+    "frontend/src/main.tsx",
+    "frontend/src/mockData.ts",
+    "frontend/src/data.ts"
   ]
 }
