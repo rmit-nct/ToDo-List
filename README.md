@@ -6,7 +6,8 @@ NEO To-Do List provides a shared workspace where team members can organize tasks
 
 ## Demo
 
-🎥 **Video Demo:** [Watch the NEO To-Do List Demo](docs/demo/NEO-TO-DO-LIST.mp4)
+🎥 **Video Demo:** 
+![demo video](docs/demo/NEO-TODO-LIST.gif)
 
 ## Features
 
